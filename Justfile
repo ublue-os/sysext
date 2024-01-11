@@ -12,6 +12,9 @@ docker-container:
 
 docker: build-docker ensure-systemd-sysext
     echo "installing docker"
+    sudo mkdir -p /etc/extensions
+    sudo cp result/docker.raw /etc/extensions/docker.raw
+    echo "Reboot to enable docker"
 
 build-docker: docker-container
     podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/docker:latest /bakery/create_docker_sysext.sh 24.0.6 docker
