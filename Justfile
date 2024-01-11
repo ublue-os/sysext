@@ -7,7 +7,7 @@ build-incus: incus-container
 incus: build-incus
     echo "installing incus"
 
-docker: build-docker
+docker: build-docker ensure-systemd-sysext
     echo "installing docker"
 
 build-docker: 
