@@ -1,4 +1,4 @@
 *.raw
 *.tgz
 *.tar.gz
-/result
+/result/*.raw
