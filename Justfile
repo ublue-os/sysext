@@ -2,7 +2,7 @@ incus-container:
     podman build -t ${USER}/incus:latest -f incus/Containerfile.incus .
 
 build-incus: incus-container
-    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/incus:latest /bakery/create_incus_sysext.sh 0.4.0 incus
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/incus:latest /bakery/create_incus_sysext.sh 0.4.0 ublueincus
 
 incus: build-incus
     echo "installing incus"
@@ -13,11 +13,21 @@ docker-container:
 docker: build-docker ensure-systemd-sysext
     echo "installing docker"
     sudo mkdir -p /etc/extensions
-    sudo cp result/docker.raw /etc/extensions/docker.raw
+    sudo cp result/ubluedocker.raw /etc/extensions/ubluedocker.raw
     echo "Reboot to enable docker"
 
 build-docker: docker-container
-    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/docker:latest /bakery/create_docker_sysext.sh 24.0.6 docker
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/docker:latest /bakery/create_docker_sysext.sh 24.0.6 ubluedocker
+
+build-docker-compose: docker-container
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/docker:latest /bakery/create_docker_compose_sysext.sh 2.22.0 ubluedockercompose
+
+
+build-docker-local: 
+    export OS=_any; ./create_docker_sysext.sh 24.0.6 ubluedocker
+
+build-docker-compose-local: 
+    export OS=_any; ./create_docker_compose_sysext.sh 2.22.0 ubluedockercompose
 
 dockercompose: 
     ./create_docker_compose_sysext.sh 2.22.0 dockercompose
