@@ -35,4 +35,6 @@ mkdir -p "${SYSEXTNAME}"/usr/bin
 mv "${SYSEXTNAME}"/"wasmtime-v${VERSION}-${ARCH}-linux"/wasmtime "${SYSEXTNAME}"/usr/bin/
 rm -r "${SYSEXTNAME}"/"wasmtime-v${VERSION}-${ARCH}-linux"
 "${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"
+mkdir -p result
+mv "${SYSEXTNAME}.raw" result/
 rm -rf "${SYSEXTNAME}"
