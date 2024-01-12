@@ -46,7 +46,14 @@ build-vscode: (container "vscode")
     @echo "Building vscode sysext"
     @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/vscode:latest /bakery/create_vscode_sysext.sh latest vscode >/dev/null
 
+# remove an installed extension by name `just remove vscode`
+remove NAME:
+    @echo "Removing {{NAME}} extension, requires elevated permissions"
+    sudo rm -f /var/lib/extensions/{{NAME}}.raw
+    sudo systemd-sysext refresh 
+    systemd-sysext
 
+[private]
 container NAME:
     @echo "Building {{NAME}} container"
     @podman build -t ${USER}/{{NAME}}:latest -f builders/{{NAME}}/Containerfile.{{NAME}} . >/dev/null
