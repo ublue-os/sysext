@@ -39,7 +39,8 @@ git checkout "v${VERSION}"
 make CMAKE_BUILD_TYPE=Release
 sudo make install DESTDIR="${SCRIPTFOLDER}/${SYSEXTNAME}"
 
-cd "${SCRIPTFOLDER}"
+cd "${SCRIPTFOLDER}/${SYSEXTNAME}"
+# remove cloned repo
 rm -rf neovim
 
 cd "${SCRIPTFOLDER}"
