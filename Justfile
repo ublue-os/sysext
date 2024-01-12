@@ -1,3 +1,5 @@
+_default:
+  @just --list
 
 [private]
 incus-container:
@@ -55,6 +57,7 @@ wasmtime-container:
 build-wasmtime: wasmtime-container
     podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/wasmtime:latest /bakery/create_wasmtime_sysext.sh 13.0.0 wasmtime
 
+# install wasmtime
 wasmtime: build-wasmtime systemd-sysext
     echo "Installing wasmtime"
 
