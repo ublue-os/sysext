@@ -51,17 +51,20 @@ dockercompose:
 
 [private]
 wasmtime-container:
-    @podman build -t ${USER}/wasmtime:latest -f builders/wasmtime/Containerfile.wasmtime .
+    @echo "Building wasmtime container"
+    @podman build -t ${USER}/wasmtime:latest -f builders/wasmtime/Containerfile.wasmtime . >/dev/null
 
 [private]
 build-wasmtime: wasmtime-container
-    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/wasmtime:latest /bakery/create_wasmtime_sysext.sh 13.0.0 wasmtime
+    @echo "Building wasmtime sysext"
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/wasmtime:latest /bakery/create_wasmtime_sysext.sh 13.0.0 wasmtime >/dev/null
 
 # install wasmtime
 wasmtime: build-wasmtime systemd-sysext
     #!/usr/bin/env bash
-    echo "Installing wasmtime"
+    echo "Installing wasmtime, requires elevated permissions"
     sudo cp result/wasmtime.raw /var/lib/extensions/wasmtime.raw
+    echo "Reloading system extensions, requires elevated permissions"
     sudo systemd-sysext refresh
 
 
