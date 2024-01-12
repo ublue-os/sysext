@@ -51,15 +51,18 @@ dockercompose:
 
 [private]
 wasmtime-container:
-    podman build -t ${USER}/wasmtime:latest -f builders/wasmtime/Containerfile.wasmtime .
+    @podman build -t ${USER}/wasmtime:latest -f builders/wasmtime/Containerfile.wasmtime .
 
 [private]
 build-wasmtime: wasmtime-container
-    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/wasmtime:latest /bakery/create_wasmtime_sysext.sh 13.0.0 wasmtime
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/wasmtime:latest /bakery/create_wasmtime_sysext.sh 13.0.0 wasmtime
 
 # install wasmtime
 wasmtime: build-wasmtime systemd-sysext
-    echo "Installing wasmtime"
+    @echo "Installing wasmtime"
+    @sudo cp result/wasmtime.raw /var/lib/extensions/wasmtime.raw
+    @sudo systemd-sysext refresh
+    
 
 [private]
 build-wasmtime-local: 
@@ -67,5 +70,6 @@ build-wasmtime-local:
 
 [private]
 systemd-sysext:
+    #!/usr/bin/env bash
     systemctl --quiet is-enabled systemd-sysext || { echo "enabling systemd-sysext"; sudo systemctl enable --now systemd-sysext.service; }
     test -d /var/lib/extensions || { echo "creating /var/lib/extensions"; sudo mkdir -p /var/lib/extensions; }
