@@ -18,6 +18,15 @@ wasmtime: build-wasmtime systemd-sysext
     sudo systemd-sysext refresh
     systemd-sysext
 
+# install neovim
+neovim: build-neovim systemd-sysext
+    #!/usr/bin/env bash
+    echo "Installing neovim extension, requires elevated permissions"
+    sudo cp result/neovim.raw /var/lib/extensions/neovim.raw
+    echo "Reloading system extensions, requires elevated permissions"
+    sudo systemd-sysext refresh
+    systemd-sysext
+
 
 [private]
 build-neovim: (container "neovim")
