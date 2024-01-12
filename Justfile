@@ -26,6 +26,9 @@ build-docker-compose: docker-container
 build-docker-local: 
     export OS=_any; ./create_docker_sysext.sh 24.0.6 ubluedocker
 
+build-udocker-local: 
+    export OS=_any; ./create_udocker_portable.sh 24.0.6 udocker
+
 build-docker-compose-local: 
     export OS=_any; ./create_docker_compose_sysext.sh 2.22.0 ubluedockercompose
 

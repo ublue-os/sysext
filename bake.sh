@@ -39,6 +39,7 @@ fi
 mkdir -p "${SYSEXTNAME}/usr/lib/extension-release.d"
 {
   echo "ID=${OS}"
+  echo "EXTENSION_RELOAD_MANAGER=1"
   if [ "${OS}" != "_any" ]; then
     echo "SYSEXT_LEVEL=1.0"
   fi
