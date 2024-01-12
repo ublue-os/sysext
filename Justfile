@@ -59,10 +59,11 @@ build-wasmtime: wasmtime-container
 
 # install wasmtime
 wasmtime: build-wasmtime systemd-sysext
-    @echo "Installing wasmtime"
-    @sudo cp result/wasmtime.raw /var/lib/extensions/wasmtime.raw
-    @sudo systemd-sysext refresh
-    
+    #!/usr/bin/env bash
+    echo "Installing wasmtime"
+    sudo cp result/wasmtime.raw /var/lib/extensions/wasmtime.raw
+    sudo systemd-sysext refresh
+
 
 [private]
 build-wasmtime-local: 
