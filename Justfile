@@ -16,7 +16,7 @@ docker-container:
     podman build -t ${USER}/docker:latest -f builders/docker/Containerfile.docker .
 
 [private]
-docker: build-docker ensure-systemd-sysext
+docker: build-docker systemd-sysext
     echo "installing docker"
     sudo mkdir -p /etc/extensions
     sudo cp result/ubluedocker.raw /etc/extensions/ubluedocker.raw
@@ -58,11 +58,11 @@ build-wasmtime: wasmtime-container
 wasmtime: build-wasmtime systemd-sysext
     echo "Installing wasmtime"
 
-
+[private]
 build-wasmtime-local: 
     export OS=_any; ./create_wasmtime_sysext.sh 13.0.0 wasmtime
 
-
+[private]
 systemd-sysext:
     systemctl --quiet is-enabled systemd-sysext || { echo "enabling systemd-sysext"; sudo systemctl enable --now systemd-sysext.service; }
     test -d /var/lib/extensions || { echo "creating /var/lib/extensions"; sudo mkdir -p /var/lib/extensions; }
