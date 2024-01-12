@@ -1,5 +1,6 @@
 wasmtimeversion := "13.0.0"
 neovimversion := "0.9.5"
+goversion := "1.21.6"
 
 _default:
   @just --list
@@ -36,10 +37,25 @@ vscode: build-vscode systemd-sysext
     sudo systemd-sysext refresh
     systemd-sysext
 
+# install go
+go: build-go systemd-sysext
+    #!/usr/bin/env bash
+    echo "Installing go extension, requires elevated permissions"
+    sudo cp result/go.raw /var/lib/extensions/go.raw
+    echo "Reloading system extensions, requires elevated permissions"
+    echo "Add /usr/local/go/bin to your PATH to use go"
+    sudo systemd-sysext refresh
+    systemd-sysext
+
 [private]
 build-neovim: (container "neovim")
     @echo "Building neovim sysext"
     @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/neovim:latest /bakery/create_neovim_sysext.sh {{neovimversion}} neovim >/dev/null
+
+[private]
+build-go: (container "go")
+    @echo "Building go sysext"
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/go:latest /bakery/create_go_sysext.sh {{goversion}} go >/dev/null
 
 [private]
 build-vscode: (container "vscode")
