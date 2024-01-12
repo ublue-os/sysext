@@ -27,11 +27,25 @@ neovim: build-neovim systemd-sysext
     sudo systemd-sysext refresh
     systemd-sysext
 
+# install vscode
+vscode: build-vscode systemd-sysext
+    #!/usr/bin/env bash
+    echo "Installing vscode extension, requires elevated permissions"
+    sudo cp result/vscode.raw /var/lib/extensions/vscode.raw
+    echo "Reloading system extensions, requires elevated permissions"
+    sudo systemd-sysext refresh
+    systemd-sysext
 
 [private]
 build-neovim: (container "neovim")
     @echo "Building neovim sysext"
     @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/neovim:latest /bakery/create_neovim_sysext.sh {{neovimversion}} neovim >/dev/null
+
+[private]
+build-vscode: (container "vscode")
+    @echo "Building vscode sysext"
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/vscode:latest /bakery/create_vscode_sysext.sh latest vscode >/dev/null
+
 
 container NAME:
     @echo "Building {{NAME}} container"
