@@ -1,0 +1,9 @@
+FROM fedora:latest
+
+
+RUN  dnf install -y xz squashfs-tools git ninja-build cmake gcc make unzip gettext curl glibc-gconv-extra
+
+COPY . /bakery
+RUN chown -R 1000:1000 /bakery
+WORKDIR /bakery
+

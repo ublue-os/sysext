@@ -1,7 +1,7 @@
 FROM fedora:latest
 
 
-RUN  dnf install -y xz squashfs-tools   
+RUN  dnf install -y xz squashfs-tools
 
 COPY . /bakery
 RUN chown -R 1000:1000 /bakery

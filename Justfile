@@ -1,12 +1,8 @@
 wasmtimeversion := "13.0.0"
+neovimversion := "0.9.5"
 
 _default:
   @just --list
-
-[private]
-wasmtime-container:
-    @echo "Building wasmtime container"
-    @podman build -t ${USER}/wasmtime:latest -f builders/wasmtime/Containerfile.wasmtime . >/dev/null
 
 [private]
 build-wasmtime: (container "wasmtime")
@@ -21,6 +17,12 @@ wasmtime: build-wasmtime systemd-sysext
     echo "Reloading system extensions, requires elevated permissions"
     sudo systemd-sysext refresh
     systemd-sysext
+
+
+[private]
+build-neovim: (container "neovim")
+    @echo "Building neovim sysext"
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/neovim:latest /bakery/create_neovim_sysext.sh {{neovimversion}} neovim >/dev/null
 
 container NAME:
     @echo "Building {{NAME}} container"
