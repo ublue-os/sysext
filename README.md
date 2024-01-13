@@ -2,6 +2,14 @@
 
 Forked from and inspired by [flatcar](https://github.com/flatcar/sysext-bakery) which is licensed Apache 2.0.
 
+## Why?
+
+Installing tools can be too complicated, especially on an immutable distribution like Silverblue or [Bluefin](https://projectbluefin.io). This experiment (ab)uses systemd-sysext to create squashfs filesystems that are mounted at /var/lib/extensions/ that overlay the host's filesystem. Therefore binaries in the extension become available on the host as if they were natively installed.
+
+Initial experiments include `wasmtime`, `go`, `Visual Studio Code` and `neovim`. It would appear that nearly anything is possible. We intend to explore this as a means to add optional development and quality-of-life tools to immutable Linux distributions, although the concept works anywhere with systemd.
+
+
+-------
 Original README Follows
 
 # sysext-bakery: Recipes for baking systemd-sysext images
