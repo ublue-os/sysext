@@ -8,6 +8,8 @@ Installing tools can be too complicated, especially on an immutable distribution
 
 Initial experiments include `wasmtime`, `go`, `Visual Studio Code` and `neovim`. It would appear that nearly anything is possible. We intend to explore this as a means to add optional development and quality-of-life tools to immutable Linux distributions, although the concept works anywhere with systemd.
 
+## Prior Art
+[Image-Based Linux Summit](https://lwn.net/Articles/946526/)
 
 -------
 Original README Follows
