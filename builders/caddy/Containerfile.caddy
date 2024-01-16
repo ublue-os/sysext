@@ -1,0 +1,13 @@
+FROM fedora:latest
+
+
+RUN  dnf install -y xz squashfs-tools
+
+COPY . /bakery
+COPY --from=cgr.dev/chainguard/caddy:latest /usr/bin/caddy /bakery/chainguard/caddy
+COPY --from=cgr.dev/chainguard/caddy:latest /usr/share/caddy/index.html /bakery/chainguard/index.html
+
+RUN chown -R 1000:1000 /bakery
+WORKDIR /bakery
+
+

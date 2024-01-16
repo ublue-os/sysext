@@ -48,6 +48,15 @@ go: build-go systemd-sysext
     sudo systemd-sysext refresh
     systemd-sysext
 
+# install caddy
+caddy: build-caddy systemd-sysext
+    #!/usr/bin/env bash
+    echo "Installing caddy extension, requires elevated permissions"
+    sudo cp result/caddy.raw /var/lib/extensions/caddy.raw
+    echo "Reloading system extensions, requires elevated permissions"
+    sudo systemd-sysext refresh
+    systemd-sysext
+
 # install albafetch from flakehub reference
 albafetch: (container "nix") (build-nix "https://flakehub.com/f/alba4k/albafetch/0.1.570.tar.gz" "albafetch") systemd-sysext
     #!/usr/bin/env bash
@@ -61,6 +70,12 @@ albafetch: (container "nix") (build-nix "https://flakehub.com/f/alba4k/albafetch
 build-neovim: (container "neovim")
     @echo "Building neovim sysext"
     @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/neovim:latest /bakery/create_neovim_sysext.sh {{neovimversion}} neovim >/dev/null
+
+[private]
+build-caddy: (container "caddy")
+    @echo "Building caddy sysext"
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/caddy:latest /bakery/create_caddy_sysext.sh latest caddy
+
 
 [private]
 build-go: (container "go")
