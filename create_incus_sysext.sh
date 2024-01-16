@@ -15,7 +15,6 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit 1
 fi
 
-
 VERSION="$1"
 SYSEXTNAME="$2"
 
@@ -64,7 +63,7 @@ cd "${SCRIPTFOLDER}"
 rm -f "lxc-${LXC_VERSION}.tar.gz"
 curl -o "lxc-${LXC_VERSION}.tar.gz" -fsSL "https://linuxcontainers.org/downloads/lxc/lxc-${LXC_VERSION}.tar.gz"
 
-tar --no-same-owner --no-same-permissions  --force-local -xf "lxc-${LXC_VERSION}.tar.gz" -C "${SYSEXTNAME}"
+tar --no-same-owner --no-same-permissions --force-local -xf "lxc-${LXC_VERSION}.tar.gz" -C "${SYSEXTNAME}"
 rm "lxc-${LXC_VERSION}.tar.gz"
 
 cd "${SYSEXTNAME}"/lxc-${LXC_VERSION}
@@ -77,7 +76,7 @@ cd "${SCRIPTFOLDER}"
 rm -f "lxcfs-${LXCFS_VERSION}.tar.gz"
 curl -o "lxcfs-${LXCFS_VERSION}.tar.gz" -fsSL "https://linuxcontainers.org/downloads/lxcfs/lxcfs-${LXCFS_VERSION}.tar.gz"
 
-tar --no-same-owner --no-same-permissions  --force-local -xf "lxcfs-${LXCFS_VERSION}.tar.gz" -C "${SYSEXTNAME}"
+tar --no-same-owner --no-same-permissions --force-local -xf "lxcfs-${LXCFS_VERSION}.tar.gz" -C "${SYSEXTNAME}"
 rm "lxcfs-${LXCFS_VERSION}.tar.gz"
 cd "${SYSEXTNAME}"/lxcfs-${LXCFS_VERSION}
 
@@ -94,7 +93,7 @@ POINTTWO=${VERSION%.*}
 curl -o "incus-${VERSION}.tar.xz" -fsSL "https://github.com/lxc/incus/releases/download/v${VERSION}/incus-${POINTTWO}.tar.xz"
 # TODO: Also allow to consume upstream containerd and runc release binaries with their respective versions
 
-tar --no-same-owner --no-same-permissions  --force-local -xf "incus-${VERSION}.tar.xz" -C "${SYSEXTNAME}"
+tar --no-same-owner --no-same-permissions --force-local -xf "incus-${VERSION}.tar.xz" -C "${SYSEXTNAME}"
 rm "incus-${VERSION}.tar.xz"
 mkdir -p "${SYSEXTNAME}"/usr/bin
 
@@ -121,7 +120,6 @@ rm -rf incus-${POINTTWO}
 rm -rf pkg
 rm -rf bin
 rm -rf raft
-
 
 #rmdir "${SYSEXTNAME}"/docker
 #mkdir -p "${SYSEXTNAME}/usr/lib/systemd/system"

@@ -15,10 +15,8 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit 1
 fi
 
-
 VERSION="$1"
 SYSEXTNAME="$2"
-
 
 # The github release uses different arch identifiers, we map them here
 # and rely on bake.sh to map them back to what systemd expects
@@ -44,8 +42,6 @@ cd "${SCRIPTFOLDER}/${SYSEXTNAME}"/usr/bin
 ln -s ../share/code/bin/code code
 
 cd "${SCRIPTFOLDER}/${SYSEXTNAME}"
-
-
 
 cd "${SCRIPTFOLDER}"
 "${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"

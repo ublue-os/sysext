@@ -37,6 +37,7 @@ vscode: build-vscode systemd-sysext
     sudo systemd-sysext refresh
     systemd-sysext
 
+
 # install go
 go: build-go systemd-sysext
     #!/usr/bin/env bash
@@ -44,6 +45,15 @@ go: build-go systemd-sysext
     sudo cp result/go.raw /var/lib/extensions/go.raw
     echo "Reloading system extensions, requires elevated permissions"
     echo "Add /usr/local/go/bin to your PATH to use go"
+    sudo systemd-sysext refresh
+    systemd-sysext
+
+# install albafetch from flakehub reference
+albafetch: (container "nix") (build-nix "https://flakehub.com/f/alba4k/albafetch/0.1.570.tar.gz" "albafetch") systemd-sysext
+    #!/usr/bin/env bash
+    echo "Installing albafetch extension, requires elevated permissions"
+    sudo cp result/albafetch.raw /var/lib/extensions/albafetch.raw
+    echo "Reloading system extensions, requires elevated permissions"
     sudo systemd-sysext refresh
     systemd-sysext
 
@@ -68,6 +78,11 @@ remove NAME:
     sudo rm -f /var/lib/extensions/{{NAME}}.raw
     sudo systemd-sysext refresh 
     systemd-sysext
+
+[private]
+build-nix FLAKEREF PACKAGE: (container "nix")
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/nix:latest /bakery/nix_bundle_sysext.sh {{FLAKEREF}} {{PACKAGE}} 
+
 
 [private]
 container NAME:

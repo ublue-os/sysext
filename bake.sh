@@ -46,7 +46,7 @@ mkdir -p "${SYSEXTNAME}/usr/lib/extension-release.d"
   if [ "${ARCH}" != "" ]; then
     echo "ARCHITECTURE=${ARCH}"
   fi
-} > "${SYSEXTNAME}/usr/lib/extension-release.d/extension-release.${SYSEXTNAME}"
+} >"${SYSEXTNAME}/usr/lib/extension-release.d/extension-release.${SYSEXTNAME}"
 rm -f "${SYSEXTNAME}".raw
 if [ "${FORMAT}" = "btrfs" ]; then
   # Note: We didn't chown to root:root, meaning that the file ownership is left as is
