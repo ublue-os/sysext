@@ -15,14 +15,8 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit 1
 fi
 
-git config --global --add safe.directory /bakery  
-
 VERSION="$1"
 SYSEXTNAME="$2"
-
-pwd
-ls -la
-. ./builders/"${SYSEXTNAME}"/env.sh
 
 # The github release uses different arch identifiers, we map them here
 # and rely on sysext.sh to map them back to what systemd expects
@@ -33,17 +27,13 @@ elif [ "${ARCH}" = "arm64" ]; then
 fi
 
 # clean target
-rm -rf "${SYSEXTNAME}"
-mkdir -p "${SYSEXTNAME}"
 
 BLUEFINPREFIX="/usr/bluefin"
-"${SCRIPTFOLDER}"/build_vscode_sysext.sh "${VERSION}" "${SYSEXTNAME}"
-"${SCRIPTFOLDER}"/build_neovim_sysext.sh 0.9.5 "${SYSEXTNAME}"
-"${SCRIPTFOLDER}"/build_docker_sysext.sh 24.0.6 "${SYSEXTNAME}"
-#"${SCRIPTFOLDER}"/build_devtools_sysext.sh unused "${SYSEXTNAME}"
-rsync -av "${SCRIPTFOLDER}"/builders/meta/files/  "${SYSEXTNAME}"/
 
+cd "${SYSEXTNAME}"
+dnf -y --releasever=39 --installroot="${SCRIPTFOLDER}/${SYSEXTNAME}" \
+      --repo=fedora --repo=updates --setopt=install_weak_deps=False install \
+      gcc
 
-cd "${SCRIPTFOLDER}"
-"${SCRIPTFOLDER}"/finalize.sh "${VERSION}" "${SYSEXTNAME}"
-
+tree "${SCRIPTFOLDER}/${SYSEXTNAME}"
+cd "${SCRIPTFOLDER}/${SYSEXTNAME}"
