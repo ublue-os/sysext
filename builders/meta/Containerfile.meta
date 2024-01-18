@@ -1,0 +1,15 @@
+FROM fedora:latest
+
+#COPY incus.dnf.sh /tmp
+#RUN /tmp/incus.dnf.sh
+
+RUN  dnf install -y xz squashfs-tools libtool sqlite-devel libuv-devel golang-go lxc-devel libudev-devel libtool \
+    && dnf groupinstall -y "Development Tools" "Development Libraries" \
+    && dnf install -y meson docbook2X doxygen kernel-headers openssl-devel pam-devel libcap-devel libseccomp-devel \ 
+        help2man fuse3-devel python3 python-jinja2 libselinux-devel systemd-devel libcap-static glibc-static \
+        ninja-build cmake gcc make unzip gettext curl glibc-gconv-extra 
+
+COPY . /bakery
+RUN chown -R 1000:1000 /bakery
+WORKDIR /bakery
+

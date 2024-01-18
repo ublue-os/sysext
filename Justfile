@@ -74,13 +74,23 @@ build-neovim: (container "neovim")
 [private]
 build-caddy: (container "caddy")
     @echo "Building caddy sysext"
-    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/caddy:latest /bakery/create_caddy_sysext.sh latest caddy
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/caddy:latest /bakery/create_caddy_sysext.sh 0.4.0 incus
+
+[private]
+build-incus: (container "incus")
+    @echo "Building incus sysext"
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/incus:latest /bakery/create_incus_sysext.sh 0.4.0 incus
 
 
 [private]
 build-go: (container "go")
     @echo "Building go sysext"
     @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/go:latest /bakery/create_go_sysext.sh {{goversion}} go >/dev/null
+
+[private]
+build-meta: (container "meta")
+    @echo "Building meta sysext"
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/meta:latest /bakery/create_meta_sysext.sh latest meta >/dev/null
 
 [private]
 build-vscode: (container "vscode")

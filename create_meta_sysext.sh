@@ -37,7 +37,8 @@ rm -rf "${SYSEXTNAME}"
 mkdir -p "${SYSEXTNAME}"
 
 BLUEFINPREFIX="/usr/bluefin"
-"${SCRIPTFOLDER}"/build_incus_sysext.sh 0.4.0 "${SYSEXTNAME}"
+"${SCRIPTFOLDER}"/build_vscode_sysext.sh "${VERSION}" "${SYSEXTNAME}"
+"${SCRIPTFOLDER}"/build_neovim_sysext.sh 0.9.5 "${SYSEXTNAME}"
 
 cd "${SCRIPTFOLDER}"
 "${SCRIPTFOLDER}"/finalize.sh "${VERSION}" "${SYSEXTNAME}"

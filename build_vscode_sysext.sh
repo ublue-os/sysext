@@ -27,22 +27,18 @@ elif [ "${ARCH}" = "arm64" ]; then
 fi
 
 # clean target
-rm -rf "${SYSEXTNAME}"
-mkdir -p "${SYSEXTNAME}"
+
 
 cd "${SYSEXTNAME}"
-git clone https://github.com/neovim/neovim.git
-cd neovim
-git checkout "v${VERSION}"
-make CMAKE_BUILD_TYPE=Release
-sudo make install DESTDIR="${SCRIPTFOLDER}/${SYSEXTNAME}"
+curl -o "vscode.tar.gz" -fsSL "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64"
+
+tar -xzf vscode.tar.gz
+rm vscode.tar.gz
+mkdir -p "${SCRIPTFOLDER}/${SYSEXTNAME}"/usr/share/
+mv VSCode-linux-x64 "${SCRIPTFOLDER}/${SYSEXTNAME}"/usr/share/code
+mkdir -p "${SCRIPTFOLDER}/${SYSEXTNAME}"/usr/bin
+cd "${SCRIPTFOLDER}/${SYSEXTNAME}"/usr/bin
+ln -s ../share/code/bin/code code
 
 cd "${SCRIPTFOLDER}/${SYSEXTNAME}"
-# remove cloned repo
-rm -rf neovim
 
-cd "${SCRIPTFOLDER}"
-"${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"
-mkdir -p result
-mv "${SYSEXTNAME}.raw" result/
-rm -rf "${SYSEXTNAME}"
