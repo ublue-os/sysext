@@ -10,7 +10,7 @@ export SOURCE_DATE_EPOCH
 # This script is to be called as helper by other scripts but can also be used standalone
 if [ $# -lt 1 ]; then
   echo "Usage: $0 SYSEXTNAME"
-  echo "The script will make a SYSEXTNAME.raw image of the folder SYSEXTNAME, and create an os-release file in it, run with --help for the list of supported environment variables."
+  echo "The script will make a SYSEXTNAME.confext.raw image of the folder SYSEXTNAME, and create an os-release file in it, run with --help for the list of supported environment variables."
   exit 1
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "If ARCH is specified as environment variable the sysext image will be required to run on the given architecture."
@@ -36,29 +36,31 @@ elif [ "${ARCH}" = "aarch64" ]; then
   ARCH="arm64"
 fi
 
-mkdir -p "${SYSEXTNAME}/usr/lib/extension-release.d"
+# TODO fix for confext path
+# /etc/extension-release.d/extension-release.<IMAGE>
+
+mkdir -p "${SYSEXTNAME}/etc/extension-release.d"
 {
   echo "ID=${OS}"
-  echo "EXTENSION_RELOAD_MANAGER=1"
   if [ "${OS}" != "_any" ]; then
     echo "SYSEXT_LEVEL=1.0"
   fi
   if [ "${ARCH}" != "" ]; then
     echo "ARCHITECTURE=${ARCH}"
   fi
-} >"${SYSEXTNAME}/usr/lib/extension-release.d/extension-release.${SYSEXTNAME}"
-rm -f "${SYSEXTNAME}".raw
+} >"${SYSEXTNAME}/etc/extension-release.d/extension-release.${SYSEXTNAME}.confext"
+rm -f "${SYSEXTNAME}".confext.raw
 if [ "${FORMAT}" = "btrfs" ]; then
   # Note: We didn't chown to root:root, meaning that the file ownership is left as is
-  mkfs.btrfs --mixed -m single -d single --shrink --rootdir "${SYSEXTNAME}" "${SYSEXTNAME}".raw
+  mkfs.btrfs --mixed -m single -d single --shrink --rootdir "${SYSEXTNAME}" "${SYSEXTNAME}".confext.raw
   # This is for testing purposes and makes not much sense to use because --rootdir doesn't allow to enable compression
 elif [ "${FORMAT}" = "ext4" ] || [ "${FORMAT}" = "ext2" ]; then
   # Assuming that 1 GB is enough
-  truncate -s 1G "${SYSEXTNAME}".raw
+  truncate -s 1G "${SYSEXTNAME}".confext.raw
   # Note: We didn't chown to root:root, meaning that the file ownership is left as is
   mkfs."${FORMAT}" -E root_owner=0:0 -d "${SYSEXTNAME}" "${SYSEXTNAME}".raw
-  resize2fs -M "${SYSEXTNAME}".raw
+  resize2fs -M "${SYSEXTNAME}".confext.raw
 else
-  mksquashfs "${SYSEXTNAME}" "${SYSEXTNAME}".raw -all-root
+  mksquashfs "${SYSEXTNAME}" "${SYSEXTNAME}".confext.raw -all-root
 fi
-echo "Created ${SYSEXTNAME}.raw"
+echo "Created ${SYSEXTNAME}.confext.raw"

@@ -95,7 +95,7 @@ build-go: (container "go")
 [private]
 build-meta: (container "meta")
     @echo "Building meta sysext"
-    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/meta:latest /bakery/create_meta_sysext.sh latest meta >/dev/null
+    @podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/meta:latest /bakery/create_meta_sysext.sh latest meta
 
 [private]
 build-vscode: (container "vscode")
@@ -137,3 +137,9 @@ systemd-sysext:
     #!/usr/bin/env bash
     systemctl --quiet is-enabled systemd-sysext || { echo "enabling systemd-sysext"; sudo systemctl enable --now systemd-sysext.service; }
     test -d /var/lib/extensions || { echo "creating /var/lib/extensions"; sudo mkdir -p /var/lib/extensions; }
+    systemctl --quiet is-enabled systemd-confext || { echo "enabling systemd-confext"; sudo systemctl enable --now systemd-confext.service; }
+    test -d /var/lib/confexts || { echo "creating /var/lib/confexts"; sudo mkdir -p /var/lib/confexts; }
+[private]
+sync:
+    @echo "Syncing to remote"
+    rsync -av result/ bjk@blue.home.arpa:~/extensions

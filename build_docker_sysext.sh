@@ -15,7 +15,7 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "To only package containerd without Docker, pass ONLY_CONTAINERD=1 as environment variable (current value is '${ONLY_CONTAINERD}')."
   echo "To only package Docker without containerd and runc, pass ONLY_DOCKER=1 as environment variable (current value is '${ONLY_DOCKER}')."
   echo "To use arm64 pass 'ARCH=arm64' as environment variable (current value is '${ARCH}')."
-  "${SCRIPTFOLDER}"/bake.sh --help
+  "${SCRIPTFOLDER}"/sysext.sh --help
   exit 1
 fi
 
@@ -28,7 +28,7 @@ VERSION="$1"
 SYSEXTNAME="$2"
 
 # The github release uses different arch identifiers, we map them here
-# and rely on bake.sh to map them back to what systemd expects
+# and rely on sysext.sh to map them back to what systemd expects
 if [ "${ARCH}" = "amd64" ] || [ "${ARCH}" = "x86-64" ]; then
   ARCH="x86_64"
 elif [ "${ARCH}" = "arm64" ]; then

@@ -10,7 +10,7 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "A temporary directory named SYSEXTNAME in the current folder will be created and deleted again."
   echo "All files in the sysext image will be owned by root."
   echo "To use arm64 pass 'ARCH=arm64' as environment variable (current value is '${ARCH}')."
-  "${SCRIPTFOLDER}"/bake.sh --help
+  "${SCRIPTFOLDER}"/sysext.sh --help
   exit 1
 fi
 
@@ -18,7 +18,7 @@ VERSION="$1"
 SYSEXTNAME="$2"
 
 # The github release uses different arch identifiers, we map them here
-# and rely on bake.sh to map them back to what systemd expects
+# and rely on sysext.sh to map them back to what systemd expects
 if [ "${ARCH}" = "amd64" ] || [ "${ARCH}" = "x86-64" ]; then
   ARCH="x86_64"
 elif [ "${ARCH}" = "arm64" ]; then
@@ -34,7 +34,7 @@ rm "wasmtime-${VERSION}.tar.xz"
 mkdir -p "${SYSEXTNAME}"/usr/bin
 mv "${SYSEXTNAME}"/"wasmtime-v${VERSION}-${ARCH}-linux"/wasmtime "${SYSEXTNAME}"/usr/bin/
 rm -r "${SYSEXTNAME}"/"wasmtime-v${VERSION}-${ARCH}-linux"
-"${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"
+"${SCRIPTFOLDER}"/sysext.sh "${SYSEXTNAME}"
 mkdir -p result
 mv "${SYSEXTNAME}.raw" result/
 rm -rf "${SYSEXTNAME}"
