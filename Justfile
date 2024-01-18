@@ -81,6 +81,11 @@ build-incus: (container "incus")
     @echo "Building incus sysext"
     podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/incus:latest /bakery/create_incus_sysext.sh 0.4.0 incus
 
+[private]
+build-docker: (container "docker")
+    @echo "Building docker sysext"
+    podman run --rm -e OS=_any -v `pwd`/result:/bakery/result ${USER}/docker:latest /bakery/create_docker_sysext.sh 24.0.6 docker
+
 
 [private]
 build-go: (container "go")

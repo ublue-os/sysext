@@ -1,0 +1,9 @@
+FROM fedora:latest
+
+
+RUN  dnf install -y xz squashfs-tools curl wget rsync
+
+COPY . /bakery
+RUN chown -R 1000:1000 /bakery
+WORKDIR /bakery
+

@@ -15,14 +15,12 @@ if [ $# -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit 1
 fi
 
-git config --global --add safe.directory /bakery  
 
 VERSION="$1"
 SYSEXTNAME="$2"
 
 pwd
 ls -la
-. ./builders/"${SYSEXTNAME}"/env.sh
 
 # The github release uses different arch identifiers, we map them here
 # and rely on bake.sh to map them back to what systemd expects
@@ -37,10 +35,7 @@ rm -rf "${SYSEXTNAME}"
 mkdir -p "${SYSEXTNAME}"
 
 BLUEFINPREFIX="/usr/bluefin"
-"${SCRIPTFOLDER}"/build_vscode_sysext.sh "${VERSION}" "${SYSEXTNAME}"
-"${SCRIPTFOLDER}"/build_neovim_sysext.sh 0.9.5 "${SYSEXTNAME}"
 "${SCRIPTFOLDER}"/build_docker_sysext.sh 24.0.6 "${SYSEXTNAME}"
-
 
 cd "${SCRIPTFOLDER}"
 "${SCRIPTFOLDER}"/finalize.sh "${VERSION}" "${SYSEXTNAME}"
