@@ -16,6 +16,23 @@ SystemD 255 will fix this limitation.
 [Image-Based Linux Summit](https://lwn.net/Articles/946526/)
 
 
+## What these scripts do
+
+They generate docker images with `nix` in order to generate a very stripped down version of your program for any system, then they make the sysext-compatible files and overlay them ontop of /usr/(whatever you want)
+
+They are buildable by running nix straight from flake.nix or through our Justfile with docker run nix
+
+
+
+Steps:
+Download ya thing
+Put all the necessary binaries and everything onto a FHS compliant folder (/usr/whatever)
+Make a squashfs image based on that sysext folder (FHS stuff)
+Apply squashfs image onto /var/lib/extensions or /run/extensions
+
+
+
+
 -------
 Original README Follows
 
