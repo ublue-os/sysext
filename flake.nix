@@ -33,7 +33,7 @@
           ${pkgs.squashfsTools}/bin/mksquashfs \
             $storePaths \
             $out \
-            -action "chmod(755)@true" -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -processors $NIX_BUILD_CORES 
+            -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -processors $NIX_BUILD_CORES -action "chmod(755)@true"
         '';
       in {
         formatter = pkgs.alejandra;
@@ -54,6 +54,7 @@
             exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
             buildCommand = squashfs-build;
           };
+
           sysext-derivation-from-config = pkgs.symlinkJoin {
             name = "derivation-with-config.json-outputs";
             paths = all_deps;
@@ -73,9 +74,9 @@
               } > "$out/lib/extension-release.d/extension-release.${config.sysext-name}.sysext"
               mkdir -p $out/usr
               ${lib.getExe pkgs.findutils} $out -maxdepth 1 -type d -exec mv {} $out/usr/ \;
-              ${lib.getExe pkgs.findutils} $out -exec chmod 755 {} \;
             '';
           };
+
           sysext-image-maker = pkgs.writeShellScriptBin "makeSysext.sh" ''
             # got this script from flatcar linux bakery!
             FORMAT="$1"
@@ -107,17 +108,40 @@
           '';
 
           compile-configuration = pkgs.writeShellScriptBin "compiler.sh" ''
-            set -euo pipefail
+            set -euox pipefail
+
             OUT_DIR="$1"
             if [ "$OUT_DIR" != \"\" ] ; then
               mkdir -p "$OUT_DIR"
               OUT_DIR="$OUT_DIR/"
+              pushd $OUT_DIR
+              trap popd EXIT
             fi
+
             ${lib.getExe self.packages.${system}.sysext-image-maker} \
               squashfs \
               ${self.packages.${system}.sysext-derivation-from-config} \
-              "$OUT_DIR"${config.sysext-name}.sysext &
-            cp -f ${self.packages.${system}.bundle-all-config} "$OUT_DIR"${config.sysext-name}-store.sqfs
+              "${config.sysext-name}.sysext"
+
+            cp -f ${(self.packages.${system}.bundle-all-config)} ${config.sysext-name}-store.sqfs
+
+            mkdir -p squashfs-root
+            ${pkgs.squashfsTools}/bin/unsquashfs -d squashfs-root ${config.sysext-name}.sysext.raw 
+            
+            chmod -R 755 squashfs-root 
+            chmod -R 755 squashfs-root/* 
+            
+            pushd squashfs-root
+            trap { popd && popd } EXIT
+            
+            ${pkgs.squashfsTools}/bin/mksquashfs \
+              ./* \
+              ../${config.sysext-name}.sysext.raw \
+              -root-becomes squashfs-root -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -action "chmod(755)@true"
+
+            popd
+
+            rm -rf squashfs-root
           '';
         };
       }
