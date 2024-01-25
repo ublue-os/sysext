@@ -135,8 +135,15 @@
             pushd squashfs-root
               
             # This directory is FHS compliant
-            # TODO: Add Fedora SELinux compatibility.
             # Having this extracted here also makes it easy to just separate the files and make a systemd-confext, too!
+            
+            # Upstream Issue: https://github.com/NixOS/nixpkgs/issues/252620
+            #$pkgs.policycoreutils/bin/semanage fcontext -a -t etc_t 'usr/etc(/.*)?'
+            #$pkgs.policycoreutils/bin/semanage fcontext -a -t lib_t 'usr/lib(/.*)?'
+            #$pkgs.policycoreutils/bin/semanage fcontext -a -t man_t 'usr/man(/.*)?'
+            #$pkgs.policycoreutils/bin/semanage fcontext -a -t bin_t 'usr/s?bin(/.*)?'
+            #$pkgs.policycoreutils/bin/semanage fcontext -a -t usr_t 'usr/share(/.*)?'
+            #$pkgs.policycoreutils/bin/restorecon -Rv *
 
             ${pkgs.squashfsTools}/bin/mksquashfs \
               . \
