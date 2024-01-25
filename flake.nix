@@ -21,12 +21,19 @@
         all_deps = builtins.map (package: pkgs.${package}) config.packages;
         #++ (lib.lists.flatten (builtins.map (package: pkgs.${package}.buildInputs) config.packages));
         squashfs-build = ''
+          set -euo pipefail
           storePaths=$(${lib.getExe pkgs.perl} ${pkgs.pathsFromGraph} ./closure-*)
 
+          # 64 cores on i686 does not work
+          # fails with FATAL ERROR: mangle2:: xz compress failed with error code 5
+          if [[ "$NIX_BUILD_CORES" -gt 48 ]] ; then 
+            NIX_BUILD_CORES=48
+          fi
+          
           ${pkgs.squashfsTools}/bin/mksquashfs \
             $storePaths \
             $out \
-            -all-root -no-hardlinks -noDataCompression -exit-on-error
+            -action "chmod(755)@true" -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -processors $NIX_BUILD_CORES 
         '';
       in {
         formatter = pkgs.alejandra;
@@ -66,6 +73,7 @@
               } > "$out/lib/extension-release.d/extension-release.${config.sysext-name}.sysext"
               mkdir -p $out/usr
               ${lib.getExe pkgs.findutils} $out -maxdepth 1 -type d -exec mv {} $out/usr/ \;
+              ${lib.getExe pkgs.findutils} $out -exec chmod 755 {} \;
             '';
           };
           sysext-image-maker = pkgs.writeShellScriptBin "makeSysext.sh" ''
@@ -99,7 +107,7 @@
           '';
 
           compile-configuration = pkgs.writeShellScriptBin "compiler.sh" ''
-            set -euox pipefail
+            set -euo pipefail
             OUT_DIR="$1"
             if [ "$OUT_DIR" != \"\" ] ; then
               mkdir -p "$OUT_DIR"
