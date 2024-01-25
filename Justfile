@@ -32,9 +32,9 @@ setup-nix-mount:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -e /nix ] ; then
-      chattr +i /
-      mkdir /nix
       chattr -i /
+      mkdir -p /nix/store
+      chattr +i /
     fi
     if [ ! -e /tmp/nix-store-bindmount ] ; then
       mkdir -p /tmp/nix-store-bindmount
