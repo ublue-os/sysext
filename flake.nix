@@ -38,17 +38,16 @@
               exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) (lib.lists.flatten (pkgs.${drv.pname})));
               buildCommand = squashfs-build;
             };
-
-          bundle-all-config = _:
+        };
+        packages = {
+          default = self.packages.${system}.compile-configuration;
+          bundle-all-config = 
             pkgs.stdenv.mkDerivation {
               name = config.sysext-name + "-store.sqfs";
               buildInputs = [pkgs.perl pkgs.gnutar];
               exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
               buildCommand = squashfs-build;
             };
-        };
-        packages = {
-          default = self.packages.${system}.compile-configuration;
           sysext-derivation-from-config = pkgs.symlinkJoin {
             name = "derivation-with-config.json-outputs";
             paths = all_deps;
@@ -101,13 +100,17 @@
           '';
             
           compile-configuration = pkgs.writeShellScriptBin "compiler.sh" ''
-            SYSEXT_NAME="$1"
-            echo "the system extension name should be the same name as the .sysext file in the metadata!"
+            set -euox pipefail
+            OUT_DIR="$1"
+            if [ "$OUT_DIR" != \"\" ] ; then
+              mkdir -p "$OUT_DIR"
+              OUT_DIR="$OUT_DIR/"
+            fi
             ${lib.getExe self.packages.${system}.sysext-image-maker} \
               squashfs \
               ${self.packages.${system}.sysext-derivation-from-config} \
-              ${config.sysext-name}.sysext
-            ${lib.getExe pkgs.nixStatic} bundle -L --bundler .#bundle-all-config -o ${config.sysext-name}-store.sqfs
+              "$OUT_DIR"${config.sysext-name}.sysext &
+              cp -f ${self.packages.${system}.bundle-all-config} "$OUT_DIR"${config.sysext-name}-store.sqfs
           '';
 
           mount-squashfs = pkgs.writeShellScriptBin "squashfs-mounter.sh" ''
