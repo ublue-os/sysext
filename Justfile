@@ -19,7 +19,7 @@ set-overlay FILE_PATH: systemd-sysext
     sudo mkdir -p /var/lib/extensions
     sudo cp "{{FILE_PATH}}" /var/lib/extensions
     echo "Reloading system extensions, requires elevated permissions"
-    sudo systemd-sysext refresh --force
+    sudo systemd-sysext refresh 
     systemd-sysext
 
 mount-store-squashfs FILE_PATH: (setup-nix-mount)

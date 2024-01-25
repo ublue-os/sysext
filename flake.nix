@@ -33,7 +33,7 @@
           ${pkgs.squashfsTools}/bin/mksquashfs \
             $storePaths \
             $out \
-            -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -processors $NIX_BUILD_CORES -action "chmod(755)@true"
+            -all-root -no-hardlinks -exit-on-error -info -progress -processors $NIX_BUILD_CORES
         '';
       in {
         formatter = pkgs.alejandra;
@@ -127,21 +127,25 @@
 
             mkdir -p squashfs-root
             ${pkgs.squashfsTools}/bin/unsquashfs -d squashfs-root ${config.sysext-name}.sysext.raw 
+            rm -f ${config.sysext-name}.sysext.raw 
             
             chmod -R 755 squashfs-root 
             chmod -R 755 squashfs-root/* 
 
-            exit 0
             pushd squashfs-root
-            trap { popd && popd } EXIT
-            
+              
+            # This directory is FHS compliant
+            # TODO: Add Fedora SELinux compatibility.
+            # Having this extracted here also makes it easy to just separate the files and make a systemd-confext, too!
+
             ${pkgs.squashfsTools}/bin/mksquashfs \
-              ./* \
+              . \
               ../${config.sysext-name}.sysext.raw \
               -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -action "chmod(755)@true"
 
-            rm -rf squashfs-root
             popd
+
+            rm -rf squashfs-root
           '';
         };
       }
