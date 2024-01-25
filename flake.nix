@@ -18,8 +18,8 @@
         pkgs = import nixpkgs {inherit system;};
         lib = pkgs.lib;
         config = pkgs.lib.trivial.importJSON ./config.json;
-        all_deps = (builtins.map (package: pkgs.${package}) config.packages);
-          #++ (lib.lists.flatten (builtins.map (package: pkgs.${package}.buildInputs) config.packages));
+        all_deps = builtins.map (package: pkgs.${package}) config.packages;
+        #++ (lib.lists.flatten (builtins.map (package: pkgs.${package}.buildInputs) config.packages));
         squashfs-build = ''
           storePaths=$(${lib.getExe pkgs.perl} ${pkgs.pathsFromGraph} ./closure-*)
 
@@ -41,13 +41,12 @@
         };
         packages = {
           default = self.packages.${system}.compile-configuration;
-          bundle-all-config = 
-            pkgs.stdenv.mkDerivation {
-              name = config.sysext-name + "-store.sqfs";
-              buildInputs = [pkgs.perl pkgs.gnutar];
-              exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
-              buildCommand = squashfs-build;
-            };
+          bundle-all-config = pkgs.stdenv.mkDerivation {
+            name = config.sysext-name + "-store.sqfs";
+            buildInputs = [pkgs.perl pkgs.gnutar];
+            exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
+            buildCommand = squashfs-build;
+          };
           sysext-derivation-from-config = pkgs.symlinkJoin {
             name = "derivation-with-config.json-outputs";
             paths = all_deps;
@@ -98,7 +97,7 @@
               ${pkgs.squashfsTools}/bin/mksquashfs "$DIRECTORY" "$TARGET_NAME".raw -all-root
             fi
           '';
-            
+
           compile-configuration = pkgs.writeShellScriptBin "compiler.sh" ''
             set -euox pipefail
             OUT_DIR="$1"
@@ -110,20 +109,7 @@
               squashfs \
               ${self.packages.${system}.sysext-derivation-from-config} \
               "$OUT_DIR"${config.sysext-name}.sysext &
-              cp -f ${self.packages.${system}.bundle-all-config} "$OUT_DIR"${config.sysext-name}-store.sqfs
-          '';
-
-          mount-squashfs = pkgs.writeShellScriptBin "squashfs-mounter.sh" ''
-            TARGET_SQUASHFS_NIX="$1"
-            if [ ! -e /nix ] ; then
-              chattr +i /
-              mkdir /nix
-              chattr -i /
-            fi
-            mkdir -p /tmp/nix-store-bindmount
-            mount --bind /nix/store /tmp/nix-store-bindmount
-            mount --bind /tmp/nix-store-bindmount /nix/store
-            mount -t squashfs -o loop $TARGET_SQUASHFS_NIX /nix/store
+            cp -f ${self.packages.${system}.bundle-all-config} "$OUT_DIR"${config.sysext-name}-store.sqfs
           '';
         };
       }
