@@ -130,18 +130,18 @@
             
             chmod -R 755 squashfs-root 
             chmod -R 755 squashfs-root/* 
-            
+
+            exit 0
             pushd squashfs-root
             trap { popd && popd } EXIT
             
             ${pkgs.squashfsTools}/bin/mksquashfs \
               ./* \
               ../${config.sysext-name}.sysext.raw \
-              -root-becomes squashfs-root -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -action "chmod(755)@true"
-
-            popd
+              -root-mode 755 -all-root -no-hardlinks -exit-on-error -progress -action "chmod(755)@true"
 
             rm -rf squashfs-root
+            popd
           '';
         };
       }
