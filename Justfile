@@ -12,34 +12,31 @@ build-config OUT_DIR:
     set -euo pipefail
     podman run --rm -w /app -v ${PWD}:/app:Z nixos/nix:latest nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#compile-configuration "{{OUT_DIR}}"
 
-set-overlay FILE_PATH: systemd-sysext 
+set-overlay FILE_PATH: systemd-sysext setup-nix-mount 
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Installing provided system extension, requires elevated permissions"
+    echo "Installing provided system extension"
     sudo mkdir -p /var/lib/extensions
     sudo cp "{{FILE_PATH}}" /var/lib/extensions
-    echo "Reloading system extensions, requires elevated permissions"
+    echo "Reloading system extensions"
     sudo systemd-sysext refresh 
     systemd-sysext
-
-mount-store-squashfs FILE_PATH: (setup-nix-mount)
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mount -t squashfs -o loop "{{FILE_PATH}}" /nix/store
 
 [private]
 setup-nix-mount:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -e /nix ] ; then
-      chattr -i /
-      mkdir -p /nix/store
-      chattr +i /
+      echo "Creating /nix/store"
+      sudo chattr -i /
+      sudo mkdir -p /nix/store
+      sudo chattr +i /
     fi
     if [ ! -e /tmp/nix-store-bindmount ] ; then
-      mkdir -p /tmp/nix-store-bindmount
-      mount --bind /nix/store /tmp/nix-store-bindmount
-      mount --bind /tmp/nix-store-bindmount /nix/store
+      echo "Creating /nix/store bind-mount"
+      sudo mkdir -p /tmp/nix-store-bindmount
+      sudo mount --bind /nix/store /tmp/nix-store-bindmount
+      sudo mount --bind /tmp/nix-store-bindmount /nix/store
     fi
 
 [private]
