@@ -2,7 +2,7 @@ _default:
   @just --list
 
 enable-sysext-support:
-  [ "$(getenforce)" != "Permissive" ] && sudo setenforce 0
+  sudo setenforce 0 || true
 
 disable-sysext-support:
   echo "Disabling sysext support requires the layers to me unmerged and SELinux will be turned on again. Please do not merge any layers while SELinux is enabled orelse your system will break!"
