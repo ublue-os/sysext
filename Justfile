@@ -49,7 +49,7 @@ remove NAME:
 unmount-store:
     sudo umount /tmp/nix-store-bindmount
     sudo umount /nix/store || true
-    sudo rm /tmp/nix-store-bindmount
+    sudo rm -rf /tmp/nix-store-bindmount
 
 [private]
 update-path:
