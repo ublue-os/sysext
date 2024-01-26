@@ -28,7 +28,9 @@ add-overlay FILE_PATH: systemd-sysext setup-nix-mount
     sudo mkdir -p /var/lib/extensions
     sudo cp "{{FILE_PATH}}" /var/lib/extensions
     echo "Reloading system extensions"
-    @just merge-overlays 
+    just merge-overlays
+    just update-path
+    echo "Make sure that /run/extensions/bin is in your PATH variable."
     systemd-sysext
 
 merge-overlays:
@@ -41,14 +43,20 @@ remove NAME:
     sudo systemd-sysext refresh
     @just refresh-store
     sudo umount /run/extensions/bin
-    @just update-path
     systemd-sysext
+
+[private]
+unmount-store:
+    sudo umount /tmp/nix-store-bindmount
+    sudo umount /nix/store
+    sudo rm /tmp/nix-store-bindmount
 
 [private]
 update-path:
     #!/usr/bin/env bash
     set -euo pipefail
     [ ! -e /usr/extensions.d/* ] && exit 1
+    sudo mkdir -p /run/extensions/bin
     for PATH_ENV in /usr/extensions.d/* ; do
       sudo mount --bind $PATH_ENV/bin /run/extensions/bin
     done
@@ -80,10 +88,10 @@ setup-nix-mount:
       sudo mount --bind /tmp/nix-store-bindmount /nix/store
     fi
 
-[private]
 clean:
-    @rm -rf result/*.raw
-    @rm -f /var/lib/extensions/*
+    sudo systemd-sysext unmerge
+    rm -f /var/lib/extensions/*
+    just unmount-store
 
 [private]
 systemd-sysext:
