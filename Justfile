@@ -48,7 +48,7 @@ remove NAME:
 [private]
 unmount-store:
     sudo umount /tmp/nix-store-bindmount
-    sudo umount /nix/store
+    sudo umount /nix/store || true
     sudo rm /tmp/nix-store-bindmount
 
 [private]
@@ -66,7 +66,7 @@ refresh-store:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -e /nix ] ; then
-      sudo umount /nix/store
+      sudo umount /nix/store || true
       just setup-nix-mount
       sudo mount --bind /usr/store /nix/store
     fi
@@ -90,7 +90,7 @@ setup-nix-mount:
 
 clean:
     sudo systemd-sysext unmerge
-    rm -f /var/lib/extensions/*
+    sudo rm -f /var/lib/extensions/*
     just unmount-store
 
 [private]
