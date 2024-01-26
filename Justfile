@@ -42,12 +42,13 @@ remove NAME:
     sudo rm -f /var/lib/extensions/{{NAME}}.raw
     sudo systemd-sysext refresh
     @just refresh-store
-    sudo umount /run/extensions/bin
+    sudo umount /run/extensions/bin || true
+    @just update-path
     systemd-sysext
 
 [private]
 unmount-store:
-    sudo umount /tmp/nix-store-bindmount
+    sudo umount /tmp/nix-store-bindmount || true
     sudo umount /nix/store || true
     sudo rm -rf /tmp/nix-store-bindmount
 
