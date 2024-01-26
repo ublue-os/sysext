@@ -1,12 +1,13 @@
 _default:
   @just --list
 
-remove NAME:
-    @echo "Removing {{NAME}} extension, requires elevated permissions"
-    sudo rm -f /var/lib/extensions/{{NAME}}.raw
-    sudo systemd-sysext refresh 
-    @just refresh-store
-    systemd-sysext
+enable-sysext-support:
+  sudo setenforce 0
+
+disable-sysext-support:
+  echo "Disabling sysext support requires the layers to me unmerged and SELinux will be turned on again. Please do not merge any layers while SELinux is enabled orelse your system will break!"
+  sudo systemd-sysext unmerge
+  sudo setenforce 1
 
 build-config OUT_DIR:
     #!/usr/bin/env bash
@@ -34,11 +35,32 @@ merge-overlays:
     sudo systemd-sysext merge
     @just refresh-store
 
+remove NAME:
+    @echo "Removing {{NAME}} extension, requires elevated permissions"
+    sudo rm -f /var/lib/extensions/{{NAME}}.raw
+    sudo systemd-sysext refresh
+    @just refresh-store
+    sudo umount /run/extensions/bin
+    @just update-path
+    systemd-sysext
+
+[private]
+update-path:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ ! -e /usr/extensions.d/* ] && exit 1
+    for PATH_ENV in /usr/extensions.d/* ; do
+      sudo mount --bind $PATH_ENV/bin /run/extensions/bin
+    done
+
 [private]
 refresh-store:
+    #!/usr/bin/env bash
+    set -euo pipefail
     if [ -e /nix ] ; then
-    sudo umount /nix/store
-    sudo mount --bind /usr/store /nix/store
+      sudo umount /nix/store
+      just setup-nix-mount
+      sudo mount --bind /usr/store /nix/store
     fi
 
 [private]
@@ -61,6 +83,7 @@ setup-nix-mount:
 [private]
 clean:
     @rm -rf result/*.raw
+    @rm -f /var/lib/extensions/*
 
 [private]
 systemd-sysext:
