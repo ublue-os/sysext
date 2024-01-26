@@ -20,7 +20,7 @@
         config = pkgs.lib.trivial.importJSON ./config.json;
         all_deps = builtins.map (package: pkgs.${package}) config.packages;
         #++ (lib.lists.flatten (builtins.map (package: pkgs.${package}.buildInputs) config.packages));
-        squashfs-build = ''
+        squashfs-build = flags: ''
           set -euo pipefail
           storePaths=$(${lib.getExe pkgs.perl} ${pkgs.pathsFromGraph} ./closure-*)
 
@@ -33,7 +33,7 @@
           ${pkgs.squashfsTools}/bin/mksquashfs \
             $storePaths \
             $out \
-            -all-root -no-hardlinks -exit-on-error -info -progress -processors $NIX_BUILD_CORES
+            -no-hardlinks -exit-on-error -info -progress -processors $NIX_BUILD_CORES ${flags}
         '';
       in {
         formatter = pkgs.alejandra;
@@ -43,7 +43,7 @@
               name = drv.pname + "-store.sqfs";
               buildInputs = [pkgs.perl pkgs.gnutar];
               exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) (lib.lists.flatten (pkgs.${drv.pname})));
-              buildCommand = squashfs-build;
+              buildCommand = (squashfs-build "-all-root");
             };
         };
         packages = {
@@ -52,7 +52,7 @@
             name = config.sysext-name + "-store.sqfs";
             buildInputs = [pkgs.perl pkgs.gnutar];
             exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
-            buildCommand = squashfs-build;
+            buildCommand = (squashfs-build "");
           };
 
           sysext-derivation-from-config = pkgs.symlinkJoin {
@@ -92,12 +92,12 @@
               ${pkgs.e2fsprogs}/bin/mkfs."$FORMAT" -E root_owner=0:0 -d "$DIRECTORY" "$DIRECTORY".raw
               ${pkgs.e2fsprogs}/bin/resize2fs -M "$DIRECTORY".raw
             else
-              ${pkgs.squashfsTools}/bin/mksquashfs "$DIRECTORY" "$TARGET_NAME".raw -all-root
+              ${pkgs.squashfsTools}/bin/mksquashfs "$DIRECTORY" "$TARGET_NAME".raw
             fi
           '';
 
           compile-configuration = pkgs.writeShellScriptBin "compiler.sh" ''
-            set -euox pipefail
+            set -euo pipefail
 
             OUT_DIR="$1"
             if [ "$OUT_DIR" != \"\" ] ; then
@@ -159,7 +159,7 @@
             popd
             
             echo "Removing remaining files"
-            sudo rm -rf squashfs-root
+            rm -rf squashfs-root
           '';
         };
       }
