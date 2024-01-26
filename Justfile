@@ -2,7 +2,7 @@ _default:
   @just --list
 
 enable-sysext-support:
-  sudo setenforce 0
+  [ "$(getenforce)" != "Permissive" ] && sudo setenforce 0
 
 disable-sysext-support:
   echo "Disabling sysext support requires the layers to me unmerged and SELinux will be turned on again. Please do not merge any layers while SELinux is enabled orelse your system will break!"
@@ -21,7 +21,7 @@ build-config OUT_DIR:
 
     "$CONTAINER_MANAGER" run --rm -v ${PWD}:/app:Z -w /app docker.io/nixos/nix:latest nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#compile-configuration "{{OUT_DIR}}"
 
-add-overlay FILE_PATH: systemd-sysext setup-nix-mount 
+add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount 
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Installing provided system extension"
@@ -33,7 +33,7 @@ add-overlay FILE_PATH: systemd-sysext setup-nix-mount
     echo "Make sure that /run/extensions/bin is in your PATH variable."
     systemd-sysext
 
-merge-overlays:
+merge-overlays: enable-sysext-support 
     sudo systemd-sysext merge
     @just refresh-store
 
