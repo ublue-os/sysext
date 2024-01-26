@@ -47,12 +47,6 @@ remove NAME:
     systemd-sysext
 
 [private]
-unmount-store:
-    sudo umount /tmp/nix-store-bindmount || true
-    sudo umount /nix/store || true
-    sudo rm -rf /tmp/nix-store-bindmount
-
-[private]
 update-path:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -92,7 +86,10 @@ setup-nix-mount:
 clean:
     sudo systemd-sysext unmerge
     sudo rm -f /var/lib/extensions/*
-    just unmount-store
+    sudo umount /tmp/nix-store-bindmount || true
+    sudo umount /nix/store || true
+    sudo umount /tmp/nix-store-bindmount || true
+    sudo rm -rf /tmp/nix-store-bindmount
 
 [private]
 systemd-sysext:
