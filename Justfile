@@ -43,7 +43,7 @@ remove NAME:
     sudo rm -f /var/lib/extensions/{{NAME}}.raw
     sudo systemd-sysext refresh
     @just refresh-store
-    sudo umount /tmp/extensions.d/bin || true
+    sudo umount /tmp/extensions.d/bin &> /dev/null || true
     @just update-path
     systemd-sysext
 
@@ -54,9 +54,15 @@ update-path:
     if [ ! -e /usr/extensions.d/ ] ; then 
       exit 1
     fi
-    sudo umount /tmp/extensions.d/bin || true
+    sudo umount /tmp/extensions.d/bin &> /dev/null || true
     sudo mkdir -p /tmp/extensions.d/bin
-    sudo mount -t overlay -o lowerdir=$(for PATH_ENV in /usr/extensions.d/*; do echo -n "$PATH_ENV/bin:"; done | sed 's/:$//') none /tmp/extensions.d/bin
+
+    # 2 here because find prints the directory name itself too
+    if [ $(find /usr/extensions.d/ -maxdepth 1 | wc -l) -lt 2 ] ; then
+      sudo mount --bind /usr/extensions.d/* /tmp/extensions.d/bin
+    else
+      sudo mount -t overlay -o lowerdir=$(for PATH_ENV in /usr/extensions.d/*; do echo -n "$PATH_ENV/bin:"; done | sed 's/:$//') none /tmp/extensions.d/bin
+    fi
 
 [private]
 refresh-store:
@@ -88,11 +94,11 @@ setup-nix-mount:
 clean:
     sudo systemd-sysext unmerge
     sudo rm -f /var/lib/extensions/*
-    sudo umount /tmp/nix-store-bindmount || true
-    sudo umount /nix/store || true
-    sudo umount /tmp/nix-store-bindmount || true
+    sudo umount /tmp/nix-store-bindmount &> /dev/null || true
+    sudo umount /nix/store &> /dev/null || true
+    sudo umount /tmp/nix-store-bindmount &> /dev/null || true
     sudo rm -rf /tmp/nix-store-bindmount
-    sudo umount /tmp/extensions.d/bin
+    sudo umount /tmp/extensions.d/bin &> /dev/null || true
     sudo rm -rf /tmp/extensions.d/
 
 [private]
