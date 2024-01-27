@@ -57,8 +57,8 @@ update-path:
     sudo umount /tmp/extensions.d/bin &> /dev/null || true
     sudo mkdir -p /tmp/extensions.d/bin
 
-    # 2 here because find prints the directory name itself too
-    if [ $(find /usr/extensions.d/ -maxdepth 1 | wc -l) -lt 2 ] ; then
+    # 3 here because find prints the directory name itself too
+    if [ $(find /usr/extensions.d/ -maxdepth 1 | wc -l) -lt 3 ] ; then
       sudo mount --bind /usr/extensions.d/* /tmp/extensions.d/bin
     else
       sudo mount -t overlay -o lowerdir=$(for PATH_ENV in /usr/extensions.d/*; do echo -n "$PATH_ENV/bin:"; done | sed 's/:$//') none /tmp/extensions.d/bin
