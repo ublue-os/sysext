@@ -30,7 +30,7 @@ add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount
     echo "Reloading system extensions"
     just merge-overlays
     just update-path
-    echo "Make sure that /run/extensions/bin is in your PATH variable."
+    echo "Make sure that /tmp/extensions.d/bin is in your PATH variable."
     systemd-sysext
 
 merge-overlays: enable-sysext-support 
@@ -42,7 +42,7 @@ remove NAME:
     sudo rm -f /var/lib/extensions/{{NAME}}.raw
     sudo systemd-sysext refresh
     @just refresh-store
-    sudo umount /run/extensions/bin || true
+    sudo umount /tmp/extensions.d/bin || true
     @just update-path
     systemd-sysext
 
@@ -50,18 +50,19 @@ remove NAME:
 update-path:
     #!/usr/bin/env bash
     set -euo pipefail
-    [ ! -e /usr/extensions.d/* ] && exit 1
-    sudo mkdir -p /run/extensions/bin
-    for PATH_ENV in /usr/extensions.d/* ; do
-      sudo mount --bind $PATH_ENV/bin /run/extensions/bin
-    done
+    if [ ! -e /usr/extensions.d/ ] ; then 
+      exit 1
+    fi
+    sudo umount /tmp/extensions.d/bin || true
+    sudo mkdir -p /tmp/extensions.d/bin
+    sudo mount -t overlay -o lowerdir=$(for PATH_ENV in /usr/extensions.d/*; do echo -n "$PATH_ENV/bin:"; done | sed 's/:$//') none /tmp/extensions.d/bin
 
 [private]
 refresh-store:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -e /nix ] ; then
-      sudo umount /nix/store || true
+      sudo umount /nix/store
       just setup-nix-mount
       sudo mount --bind /usr/store /nix/store
     fi
@@ -90,6 +91,8 @@ clean:
     sudo umount /nix/store || true
     sudo umount /tmp/nix-store-bindmount || true
     sudo rm -rf /tmp/nix-store-bindmount
+    sudo umount /tmp/extensions.d/bin
+    sudo rm -rf /tmp/extensions.d/
 
 [private]
 systemd-sysext:
