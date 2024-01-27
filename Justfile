@@ -34,8 +34,9 @@ add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount
     systemd-sysext
 
 merge-overlays: enable-sysext-support 
-    sudo systemd-sysext merge
+    sudo systemd-sysext refresh 
     @just refresh-store
+    @just update-path
 
 remove NAME:
     @echo "Removing {{NAME}} extension, requires elevated permissions"
