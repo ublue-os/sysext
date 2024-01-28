@@ -20,6 +20,7 @@ build-config CONFIG_FILE:
     fi
 
     "$CONTAINER_MANAGER" run --rm -v ${PWD}:/app:Z -w /app --mount type=bind,source=$(realpath {{CONFIG_FILE}}),target=/config.json,readonly docker.io/nixos/nix:latest sh -c "BEXT_CONFIG_FILE=/config.json nix build --extra-experimental-features nix-command --extra-experimental-features flakes --impure .#bake-recipe && cp result ./layer_result.sysext.raw"
+    mv ./layer_result.sysext.raw $(jq '."sysext-name"' $(realpath {{CONFIG_FILE}})).sysext.raw
 
 add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount 
     #!/usr/bin/env bash
@@ -30,8 +31,8 @@ add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount
     echo "Reloading system extensions"
     just merge-overlays
     just update-path
-    echo "Make sure that /tmp/extensions.d/bin is in your PATH variable."
     systemd-sysext
+    echo "Make sure that /tmp/extensions.d/bin is in your PATH variable."
 
 merge-overlays: enable-sysext-support 
     sudo systemd-sysext refresh 
