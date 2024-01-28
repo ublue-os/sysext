@@ -9,7 +9,7 @@ disable-sysext-support:
   sudo systemd-sysext unmerge
   sudo setenforce 1
 
-build-config OUT_DIR:
+build-config CONFIG_FILE:
     #!/usr/bin/env bash
     set -euo pipefail
     CONTAINER_MANAGER="${CONTAINER_MANAGER-podman}"
@@ -19,7 +19,7 @@ build-config OUT_DIR:
       exit 1
     fi
 
-    "$CONTAINER_MANAGER" run --rm -v ${PWD}:/app:Z -w /app docker.io/nixos/nix:latest nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#compile-configuration "{{OUT_DIR}}"
+    "$CONTAINER_MANAGER" run --rm -v ${PWD}:/app:Z -w /app --mount type=bind,source=$(realpath {{CONFIG_FILE}}),target=/config.json,readonly docker.io/nixos/nix:latest sh -c "BEXT_CONFIG_FILE=/config.json nix build --extra-experimental-features nix-command --extra-experimental-features flakes --impure .#bake-recipe && cp result ./layer_result.sysext.raw"
 
 add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount 
     #!/usr/bin/env bash
