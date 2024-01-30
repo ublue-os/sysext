@@ -22,6 +22,9 @@
         all_deps = builtins.map (package: pkgs.${package}) config.packages;
       in {
         formatter = pkgs.alejandra;
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [cobra-cli go gopls eclint];
+        };
         packages = {
           default = self.packages.${system}.bake-recipe;
 

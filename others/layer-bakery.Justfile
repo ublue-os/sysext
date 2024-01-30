@@ -19,7 +19,7 @@ build-config CONFIG_FILE:
       exit 1
     fi
 
-    "$CONTAINER_MANAGER" run --rm -v ${PWD}:/app:Z -w /app --mount type=bind,source=$(realpath {{CONFIG_FILE}}),target=/config.json,readonly docker.io/nixos/nix:latest sh -c "BEXT_CONFIG_FILE=/config.json nix build --extra-experimental-features nix-command --extra-experimental-features flakes --impure .#bake-recipe && cp result ./layer_result.sysext.raw"
+    "$CONTAINER_MANAGER" run --rm -v ${PWD}/..:/app:Z -w /app --mount type=bind,source=$(realpath {{CONFIG_FILE}}),target=/config.json,readonly docker.io/nixos/nix:latest sh -c "BEXT_CONFIG_FILE=/config.json nix build --extra-experimental-features nix-command --extra-experimental-features flakes --impure .#bake-recipe && cp result ./layer_result.sysext.raw"
     mv ./layer_result.sysext.raw $(jq '."sysext-name"' $(realpath {{CONFIG_FILE}})).sysext.raw
 
 add-overlay FILE_PATH: systemd-sysext enable-sysext-support setup-nix-mount 
