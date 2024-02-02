@@ -10,7 +10,7 @@ import (
 )
 
 // storeCmd represents the store command
-var storeCmd = &cobra.Command{
+var StoreCmd = &cobra.Command{
 	Use:   "store",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -25,8 +25,6 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(storeCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

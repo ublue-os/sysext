@@ -1,6 +1,5 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -11,7 +10,7 @@ import (
 )
 
 // serviceCmd represents the service command
-var serviceCmd = &cobra.Command{
+var ServiceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -26,7 +25,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(serviceCmd)
+	RootCmd.AddCommand(ServiceCmd)
 
 	// Here you will define your flags and configuration settings.
 

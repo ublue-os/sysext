@@ -9,7 +9,7 @@ import (
 )
 
 // addToPathCmd represents the addToPath command
-var addToPathCmd = &cobra.Command{
+var AddToPathCmd = &cobra.Command{
 	Use:   "addToPath",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -24,7 +24,6 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(addToPathCmd)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
