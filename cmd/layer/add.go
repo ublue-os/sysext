@@ -3,6 +3,7 @@ package layer
 import (
 	"crypto/md5"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -20,24 +21,19 @@ var AddCmd = &cobra.Command{
 	Long:  `Copy TARGET over to cache-dir as a blob with the TARGET's sha256 as the filename`,
 	RunE:  addExec,
 }
+
 var (
 	FNoSymlink  *bool
 	FNoChecksum *bool
+	FOverride   *bool
 	FLayerName  *string
 )
 
 func init() {
 	FNoSymlink = AddCmd.Flags().Bool("no-symlink", false, "Do not activate layer once added to cache")
 	FNoChecksum = AddCmd.Flags().Bool("no-checksum", false, "Do not check if layer was properly added to cache")
+	FOverride = AddCmd.Flags().Bool("override", false, "Override blob if they are already written to cache")
 	FLayerName = AddCmd.Flags().String("layer-name", "", "Name of the layer that will be added onto")
-}
-
-type TargetLayerInfo struct {
-	LayerName string
-	Path      string
-	Data      []byte
-	FileInfo  os.FileInfo
-	UUID      []byte
 }
 
 func addExec(cmd *cobra.Command, args []string) error {
@@ -45,7 +41,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		fmt.Println("Required argument TARGET")
 		os.Exit(1)
 	}
-	target_layer := &TargetLayerInfo{}
+	target_layer := &internal.TargetLayerInfo{}
 	target_layer.Path = path.Clean(args[0])
 
 	var err error
@@ -71,13 +67,18 @@ func addExec(cmd *cobra.Command, args []string) error {
 		target_layer.LayerName = strings.Split(path.Base(target_layer.Path), ".")[0]
 	}
 	var blob_filepath string
-	blob_filepath, err = filepath.Abs(fmt.Sprintf("%s/%s/%x", internal.Config.CacheDir, target_layer.LayerName, target_layer.UUID))
+	blob_filepath, err = filepath.Abs(path.Join(internal.Config.CacheDir, target_layer.LayerName, hex.EncodeToString(target_layer.UUID)))
 	if err != nil {
 		return err
 	}
 
 	if err := os.MkdirAll(path.Dir(blob_filepath), 0755); err != nil {
 		return err
+	}
+
+	if _, err = os.Stat(blob_filepath); err == nil && !*FOverride {
+		fmt.Fprintln(os.Stderr, "Blob is already in cache")
+		os.Exit(1)
 	}
 
 	target_layer.Data, err = os.ReadFile(target_layer.Path)
@@ -111,7 +112,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 	}
 
 	var current_blob_path string
-	current_blob_path, err = filepath.Abs(path.Dir(blob_filepath) + "/current_blob")
+	current_blob_path, err = filepath.Abs(path.Join(path.Dir(blob_filepath), internal.CurrentBlobName))
 	if err != nil {
 		return err
 	}
