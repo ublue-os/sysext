@@ -10,6 +10,13 @@ type TargetLayerInfo struct {
 	UUID      []byte
 }
 
+type LayerConfiguration struct {
+	Name     string   `json:"sysext-name"`
+	Packages []string `json:"packages"`
+	Arch     string   `json:"arch"`
+	Os       string   `json:"os"`
+}
+
 type config struct {
 	CacheDir      string
 	ExtensionsDir string

@@ -1,6 +1,0 @@
-{
-  "sysext-name": "hello-layer",
-  "packages": ["hello", "rsync", "incus"],
-  "arch": "x86-64",
-  "os": "_any"
-}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/filecomp"
 	"github.com/ublue-os/sysext/pkg/fileio"
 )
 
@@ -102,7 +103,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		}
 		defer tlayer_fileobj.Close()
 
-		_, err = internal.CheckFilesAreEqual(md5.New(), tlayer_fileobj, written_file)
+		_, err = filecomp.CheckFilesAreEqual(md5.New(), tlayer_fileobj, written_file)
 		if err != nil {
 			return err
 		}
