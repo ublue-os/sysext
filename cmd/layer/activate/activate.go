@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -30,8 +29,7 @@ func init() {
 
 func activateCmd(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "Required positional argument TARGET")
-		os.Exit(1)
+		return internal.NewPositionalError("TARGET")
 	}
 
 	target_layer := args[0]

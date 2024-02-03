@@ -40,8 +40,7 @@ func init() {
 
 func addExec(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
-		fmt.Println("Required argument TARGET")
-		os.Exit(1)
+		return internal.NewPositionalError("TARGET")
 	}
 	target_layer := &internal.TargetLayerInfo{}
 	target_layer.Path = path.Clean(args[0])
