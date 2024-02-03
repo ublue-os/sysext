@@ -82,7 +82,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	if err := fileio.FileCopy(blob_filepath, target_layer.Path); err != nil {
+	if err := fileio.FileCopy(target_layer.Path, blob_filepath); err != nil {
 		return err
 	}
 

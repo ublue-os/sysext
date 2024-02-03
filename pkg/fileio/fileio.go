@@ -16,14 +16,6 @@ func FileExist(fileName string) bool {
 }
 
 func FileCopy(sourceFile, destFile string) error {
-	filestat, err := os.Stat(sourceFile)
-	if err != nil {
-		return err
-	}
-
-	if !filestat.Mode().IsRegular() {
-		return nil
-	}
 	source, err := os.Open(sourceFile)
 	if err != nil {
 		return err
