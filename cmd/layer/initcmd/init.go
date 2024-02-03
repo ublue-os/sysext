@@ -1,4 +1,4 @@
-package layer
+package initcmd
 
 import (
 	"encoding/json"

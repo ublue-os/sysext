@@ -1,4 +1,4 @@
-package layer
+package getProperty
 
 import (
 	"github.com/spf13/cobra"

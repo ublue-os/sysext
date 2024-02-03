@@ -1,4 +1,4 @@
-package layer
+package clean
 
 import (
 	"errors"
@@ -20,13 +20,13 @@ var CleanCmd = &cobra.Command{
 }
 
 var (
-	FExclude *[]string
-	FDryRun  *bool
+	fExclude *[]string
+	fDryRun  *bool
 )
 
 func init() {
-	FExclude = CleanCmd.Flags().StringSliceP("exclude", "e", make([]string, 0), "Exclude directories from cleaning")
-	FDryRun = CleanCmd.Flags().Bool("dry-run", false, "Do not actually clean anything, just print what would be deleted")
+	fExclude = CleanCmd.Flags().StringSliceP("exclude", "e", make([]string, 0), "Exclude directories from cleaning")
+	fDryRun = CleanCmd.Flags().Bool("dry-run", false, "Do not actually clean anything, just print what would be deleted")
 }
 
 func cleanCmd(cmd *cobra.Command, args []string) error {
@@ -83,7 +83,7 @@ func cleanCmd(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		for _, provided_path := range *FExclude {
+		for _, provided_path := range *fExclude {
 			managed_path, err := filepath.Abs(path.Clean(provided_path))
 			if err != nil {
 				return err
@@ -95,7 +95,7 @@ func cleanCmd(cmd *cobra.Command, args []string) error {
 			if slices.Contains(do_not_clean, cleanthing) {
 				continue
 			}
-			if *FDryRun {
+			if *fDryRun {
 				fmt.Printf("d: %s\n", cleanthing)
 				continue
 			}

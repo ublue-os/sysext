@@ -1,4 +1,4 @@
-package layer
+package remove
 
 import (
 	"fmt"
@@ -19,11 +19,11 @@ var RemoveCmd = &cobra.Command{
 }
 
 var (
-	FHash *string
+	fHash *string
 )
 
 func init() {
-	FHash = RemoveCmd.Flags().String("hash", "", "Remove specific hash from storage")
+	fHash = RemoveCmd.Flags().String("hash", "", "Remove specific hash from storage")
 }
 
 func removeCmd(cmd *cobra.Command, args []string) error {
@@ -39,8 +39,8 @@ func removeCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if *FHash != "" {
-		err := os.Remove(path.Join(cache_dir, target_layer, *FHash))
+	if *fHash != "" {
+		err := os.Remove(path.Join(cache_dir, target_layer, *fHash))
 		if err != nil {
 			return err
 		}

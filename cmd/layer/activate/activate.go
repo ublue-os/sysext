@@ -1,4 +1,4 @@
-package layer
+package activate
 
 import (
 	"fmt"

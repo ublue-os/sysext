@@ -1,4 +1,4 @@
-package layer
+package deactivate
 
 import (
 	"fmt"

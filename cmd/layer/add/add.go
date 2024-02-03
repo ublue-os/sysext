@@ -1,4 +1,4 @@
-package layer
+package add
 
 import (
 	"crypto/md5"
@@ -25,17 +25,17 @@ var AddCmd = &cobra.Command{
 }
 
 var (
-	FNoSymlink  *bool
-	FNoChecksum *bool
-	FOverride   *bool
-	FLayerName  *string
+	fNoSymlink  *bool
+	fNoChecksum *bool
+	fOverride   *bool
+	fLayerName  *string
 )
 
 func init() {
-	FNoSymlink = AddCmd.Flags().Bool("no-symlink", false, "Do not activate layer once added to cache")
-	FNoChecksum = AddCmd.Flags().Bool("no-checksum", false, "Do not check if layer was properly added to cache")
-	FOverride = AddCmd.Flags().Bool("override", false, "Override blob if they are already written to cache")
-	FLayerName = AddCmd.Flags().String("layer-name", "", "Name of the layer that will be added onto")
+	fNoSymlink = AddCmd.Flags().Bool("no-symlink", false, "Do not activate layer once added to cache")
+	fNoChecksum = AddCmd.Flags().Bool("no-checksum", false, "Do not check if layer was properly added to cache")
+	fOverride = AddCmd.Flags().Bool("override", false, "Override blob if they are already written to cache")
+	fLayerName = AddCmd.Flags().String("layer-name", "", "Name of the layer that will be added onto")
 }
 
 func addExec(cmd *cobra.Command, args []string) error {
@@ -63,9 +63,9 @@ func addExec(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if *FLayerName != "" {
+	if *fLayerName != "" {
 		fmt.Fprintln(os.Stderr, "Warning: the path inside /usr/lib/sysext/extensions-* must be the same as the layer's name in order for it to function, please check if this is actually the case")
-		target_layer.LayerName = *FLayerName
+		target_layer.LayerName = *fLayerName
 	} else {
 		target_layer.LayerName = strings.Split(path.Base(target_layer.Path), ".")[0]
 	}
@@ -79,7 +79,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if fileio.FileExist(blob_filepath) && !*FOverride {
+	if fileio.FileExist(blob_filepath) && !*fOverride {
 		fmt.Fprintln(os.Stderr, "Blob is already in cache")
 		os.Exit(1)
 	}
@@ -88,7 +88,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !*FNoChecksum {
+	if !*fNoChecksum {
 		var written_file *os.File
 		written_file, err = os.Open(blob_filepath)
 		if err != nil {
@@ -126,7 +126,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if *FNoSymlink == false {
+	if *fNoSymlink == false {
 		err = os.Symlink(blob_filepath, current_blob_path)
 		if err != nil {
 			return err
