@@ -9,7 +9,7 @@ import (
 	"github.com/ublue-os/sysext/cmd/layer/deactivate"
 	//"github.com/ublue-os/sysext/cmd/layer/getProperty"
 	"github.com/ublue-os/sysext/cmd/layer/initcmd"
-	//"github.com/ublue-os/sysext/cmd/layer/list"
+	"github.com/ublue-os/sysext/cmd/layer/list"
 	"github.com/ublue-os/sysext/cmd/layer/remove"
 	"github.com/ublue-os/sysext/internal"
 )
@@ -28,7 +28,7 @@ func init() {
 	LayerCmd.AddCommand(deactivate.DeactivateCmd)
 	//LayerCmd.AddCommand(GetPropertyCmd)
 	LayerCmd.AddCommand(initcmd.InitCmd)
-	//LayerCmd.AddCommand(ListCmd)
+	LayerCmd.AddCommand(list.ListCmd)
 	//LayerCmd.AddCommand(BuildCmd)
 	LayerCmd.AddCommand(remove.RemoveCmd)
 }
