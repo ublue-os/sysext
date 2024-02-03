@@ -63,6 +63,7 @@ func addExec(cmd *cobra.Command, args []string) error {
 	}
 
 	if *FLayerName != "" {
+		fmt.Fprintln(os.Stderr, "Warning: the path inside /usr/lib/sysext/extensions-* must be the same as the layer's name in order for it to function, please check if this is actually the case")
 		target_layer.LayerName = *FLayerName
 	} else {
 		target_layer.LayerName = strings.Split(path.Base(target_layer.Path), ".")[0]

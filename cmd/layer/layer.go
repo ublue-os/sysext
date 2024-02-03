@@ -17,7 +17,7 @@ func init() {
 	LayerCmd.AddCommand(ActivateCmd)
 	LayerCmd.AddCommand(AddCmd)
 	LayerCmd.AddCommand(CleanCmd)
-	LayerCmd.AddCommand(NewDeactivateCmd())
+	LayerCmd.AddCommand(DeactivateCmd)
 	LayerCmd.AddCommand(NewGetPropertyCmd())
 	LayerCmd.AddCommand(NewInitCmd())
 	LayerCmd.AddCommand(NewListCmd())

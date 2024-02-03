@@ -1,31 +1,56 @@
 package layer
 
 import (
+	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
+	"github.com/ublue-os/sysext/internal"
 )
 
-// activateCmd represents the activate command
 var ActivateCmd = &cobra.Command{
 	Use:   "activate",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-        and usage of using your command. For example:
+	Short: "Activate a layer and refresh sysext",
+	Long:  `Activate a selected layer (symlink it to /var/lib/extensions) and refresh the system extensions store.`,
+	RunE:  activateCmd,
+}
 
-        Cobra is a CLI library for Go that empowers applications.
-        This application is a tool to generate the needed files
-        to quickly create a Cobra application.`,
-	RunE: activateCmd,
+func init() {
+	ActivateCmd.Flags().BoolP("no-refresh", "r", false, "Do not refresh systemd-sysext on run")
 }
 
 func activateCmd(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "Required positional argument TARGET")
+		os.Exit(1)
+	}
+
+	target_layer := args[0]
+
+	cache_dir, err := filepath.Abs(path.Clean(internal.Config.CacheDir))
+	if err != nil {
+		return err
+	}
+
+	current_blob_path := path.Join(cache_dir, target_layer, internal.CurrentBlobName)
+	if _, err := os.Stat(current_blob_path); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(internal.Config.ExtensionsDir, 0755); err != nil {
+		return err
+	}
+
+	extensions_dir, err := filepath.Abs(path.Clean(internal.Config.ExtensionsDir))
+	if err != nil {
+		return err
+	}
+
+	if err := os.Symlink(current_blob_path, path.Join(extensions_dir, path.Base(path.Dir(current_blob_path))+internal.ValidSysextExtension)); err != nil {
+		return err
+	}
+
 	return nil
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// activateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// activateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

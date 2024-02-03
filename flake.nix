@@ -2,7 +2,7 @@
   description = "Systemd System Extensions using the Nix Store";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/release-23.11";
+    nixpkgs.url = "nixpkgs/nixos-23.11";
     flake-utils = {
       url = "github:numtide/flake-utils";
     };
