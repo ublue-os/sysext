@@ -11,9 +11,13 @@ type TargetLayerInfo struct {
 }
 
 type config struct {
-	CacheDir string
+	CacheDir      string
+	ExtensionsDir string
 }
 
-const CurrentBlobName = "current_blob"
+const (
+	CurrentBlobName      = "current_blob"
+	ValidSysextExtension = ".sysext.raw"
+)
 
 var Config = &config{}

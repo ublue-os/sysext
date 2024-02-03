@@ -11,7 +11,8 @@ var LayerCmd = &cobra.Command{
 }
 
 func init() {
-	LayerCmd.PersistentFlags().StringVar(&internal.Config.CacheDir, "cache-root", "/var/cache/extensions.d", "root directory for the layer cache")
+	LayerCmd.PersistentFlags().StringVar(&internal.Config.CacheDir, "cache-root", "/var/cache/extensions", "root directory for the layer cache")
+	LayerCmd.PersistentFlags().StringVar(&internal.Config.ExtensionsDir, "extensions-root", "/var/lib/extensions", "root directory for the systemd-sysext layers")
 
 	LayerCmd.AddCommand(ActivateCmd)
 	LayerCmd.AddCommand(AddCmd)
@@ -21,5 +22,5 @@ func init() {
 	LayerCmd.AddCommand(NewInitCmd())
 	LayerCmd.AddCommand(NewListCmd())
 	LayerCmd.AddCommand(NewRefreshCmd())
-	LayerCmd.AddCommand(NewRemoveCmd())
+	LayerCmd.AddCommand(RemoveCmd)
 }
