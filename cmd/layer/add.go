@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/fileio"
 )
 
 var AddCmd = &cobra.Command{
@@ -76,17 +77,12 @@ func addExec(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if _, err = os.Stat(blob_filepath); err == nil && !*FOverride {
+	if fileio.FileExist(blob_filepath) && !*FOverride {
 		fmt.Fprintln(os.Stderr, "Blob is already in cache")
 		os.Exit(1)
 	}
 
-	target_layer.Data, err = os.ReadFile(target_layer.Path)
-	if err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(blob_filepath, target_layer.Data, 0755); err != nil {
+	if err := fileio.FileCopy(blob_filepath, target_layer.Path); err != nil {
 		return err
 	}
 

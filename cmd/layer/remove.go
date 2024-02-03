@@ -2,11 +2,13 @@ package layer
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/ublue-os/sysext/internal"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
+	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/fileio"
 )
 
 var RemoveCmd = &cobra.Command{
@@ -50,8 +52,7 @@ func removeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	deactivated_layer := path.Join(internal.Config.ExtensionsDir, target_layer) + internal.ValidSysextExtension
-	_, err = os.Stat(deactivated_layer)
-	if err != nil {
+	if !fileio.FileExist(deactivated_layer) {
 		return nil
 	}
 	err = os.Remove(deactivated_layer)
