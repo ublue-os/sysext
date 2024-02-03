@@ -3,6 +3,7 @@ package layer
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 
@@ -17,8 +18,14 @@ var ActivateCmd = &cobra.Command{
 	RunE:  activateCmd,
 }
 
+var (
+	fNoRefresh *bool
+	fForce     *bool
+)
+
 func init() {
-	ActivateCmd.Flags().BoolP("no-refresh", "r", false, "Do not refresh systemd-sysext on run")
+	fNoRefresh = ActivateCmd.Flags().BoolP("no-refresh", "r", false, "Do not refresh systemd-sysext on run")
+	fForce = ActivateCmd.Flags().BoolP("force", "f", false, "Pass the --force flag to systemd-sysext")
 }
 
 func activateCmd(cmd *cobra.Command, args []string) error {
@@ -49,6 +56,19 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := os.Symlink(current_blob_path, path.Join(extensions_dir, path.Base(path.Dir(current_blob_path))+internal.ValidSysextExtension)); err != nil {
+		return err
+	}
+
+	if *fNoRefresh {
+		return nil
+	}
+
+	var forceflag string = ""
+	if *fForce {
+		forceflag = "--force"
+	}
+
+	if err := exec.Command("systemd-sysext", "refresh", forceflag).Run(); err != nil {
 		return err
 	}
 
