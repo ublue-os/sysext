@@ -228,7 +228,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
-	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))}
+	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
 	if err != nil {
 		return err
