@@ -195,11 +195,17 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 
 	var out_path string
 	if *fOutputPath != "" {
-		out_path = *fOutputPath
+		out_path, err = filepath.Abs(path.Clean(*fOutputPath))
+		if err != nil {
+			return err
+		}
 	} else {
-		out_path = path.Join(pwd, configuration.Name+internal.ValidSysextExtension)
+		out_path, err = filepath.Abs(path.Join(pwd, configuration.Name+internal.ValidSysextExtension))
+		if err != nil {
+			return err
+		}
 	}
-	nix_flags := "--extra-experimental-features nix-command --extra-experimental-features flakes --impure"
+	nix_flags := "-L --extra-experimental-features nix-command --extra-experimental-features flakes --impure"
 
 	spec := specgen.NewSpecGenerator(full_image_name, false)
 	spec.Mounts = append(spec.Mounts, specs.Mount{
@@ -222,7 +228,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
-	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("nix build %s %s#%s -o result && cp -f ./result %s && rm ./result", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, out_path)}
+	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
 	if err != nil {
 		return err

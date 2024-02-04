@@ -50,6 +50,7 @@
 
           bake-recipe = pkgs.stdenv.mkDerivation {
             name = config.sysext-name + "-baked";
+            buildInputs = with pkgs; [coreutils squashfsTools];
             buildCommand = ''
               set -eoux pipefail
 
@@ -69,15 +70,15 @@
                     echo "ARCHITECTURE=${config.arch}"
                   fi
                 } > "usr/lib/extension-release.d/extension-release.${config.sysext-name}.sysext"
-              }
+              } &
 
+              mkdir -p "usr/extensions.d/${config.sysext-name}/bin"
               {
-                mkdir -p "usr/extensions.d/${config.sysext-name}/bin"
                 mv usr/bin/* "usr/extensions.d/${config.sysext-name}/bin"
                 rm -r usr/bin
               } &
-              
-              echo '${builtins.toJSON config}' >> usr/extensions.d/${config.sysext-name}/metadata.json
+
+              echo '${builtins.toJSON config}' | tee usr/extensions.d/${config.sysext-name}/metadata.json
               
               mkdir -p usr/store
               cp -r ${(self.packages.${system}.bundle-recipe-derivations)}/* ./usr/store
