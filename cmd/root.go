@@ -28,7 +28,6 @@ func Execute() {
 
 func init() {
 	RootCmd.AddCommand(layer.LayerCmd)
+	RootCmd.AddCommand(MountCmd)
 	RootCmd.AddCommand(AddToPathCmd)
-	RootCmd.AddCommand(ServiceCmd)
-	RootCmd.AddCommand(StoreCmd)
 }

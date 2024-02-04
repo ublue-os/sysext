@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 )
@@ -14,16 +13,6 @@ var DeactivateCmd = &cobra.Command{
 	Short: "Deactivate a layer and refresh sysext",
 	Long:  `Deativate a selected layer (unsymlink it from /var/lib/extensions) and refresh the system extensions store.`,
 	RunE:  deactivateCmd,
-}
-
-var (
-	fDeactivateNoRefresh *bool
-	fDeactivateForce     *bool
-)
-
-func init() {
-	fDeactivateNoRefresh = DeactivateCmd.Flags().BoolP("no-refresh", "r", false, "Do not refresh systemd-sysext on run")
-	fDeactivateForce = DeactivateCmd.Flags().BoolP("force", "f", false, "Pass the --force flag to systemd-sysext")
 }
 
 func deactivateCmd(cmd *cobra.Command, args []string) error {
@@ -45,19 +34,6 @@ func deactivateCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := os.Remove(target_layer_path); err != nil {
-		return err
-	}
-
-	if *fDeactivateNoRefresh {
-		return nil
-	}
-
-	var forceflag string = ""
-	if *fDeactivateForce {
-		forceflag = "--force"
-	}
-
-	if err := exec.Command("systemd-sysext", "refresh", forceflag).Run(); err != nil {
 		return err
 	}
 

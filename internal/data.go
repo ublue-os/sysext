@@ -28,6 +28,7 @@ type config struct {
 	CacheDir        string
 	ExtensionsDir   string
 	ExtensionsMount string
+	StoreDir        string
 }
 
 const (
