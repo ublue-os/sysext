@@ -22,9 +22,9 @@
         all_deps = builtins.map (package: pkgs.${package}) config.packages;
       in {
         formatter = pkgs.alejandra;
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [cobra-cli go gopls eclint];
-        };
+        devShells.default = pkgs.mkShell.override { stdenv = pkgs.llvmPackages_14.stdenv; } ({
+          packages = with pkgs; [cobra-cli go gopls eclint pkg-config btrfs-progs gpgme lvm2];
+        });
         packages = {
           default = self.packages.${system}.bake-recipe;
 

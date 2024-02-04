@@ -45,12 +45,6 @@ func remove(slice []string, s int) []string {
 	return append(slice[:s], slice[s+1:]...)
 }
 
-var manualCases = []string{"PACKAGES", "UNITS", "SIGNINGKEY", "BINARIES", "ISMOUNTED"}
-
-func handleManualCases(property_name string) error {
-	return nil
-}
-
 func getPropertyCmd(cmd *cobra.Command, args []string) error {
 	var (
 		target_layer        string = ""

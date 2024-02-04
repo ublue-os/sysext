@@ -9,7 +9,7 @@ import (
 
 var RootCmd = &cobra.Command{
 	Use:   "bext",
-	Short: "A brief description of your application",
+	Short: "",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
 

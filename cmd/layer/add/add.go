@@ -21,7 +21,7 @@ var AddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a built layer onto the cache and activate it",
 	Long:  `Copy TARGET over to cache-dir as a blob with the TARGET's sha256 as the filename`,
-	RunE:  addExec,
+	RunE:  addCmd,
 }
 
 var (
@@ -38,7 +38,7 @@ func init() {
 	fLayerName = AddCmd.Flags().String("layer-name", "", "Name of the layer that will be added onto")
 }
 
-func addExec(cmd *cobra.Command, args []string) error {
+func addCmd(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return internal.NewPositionalError("TARGET")
 	}
