@@ -1,6 +1,9 @@
 package internal
 
-import "os"
+import (
+	"os"
+	"reflect"
+)
 
 type TargetLayerInfo struct {
 	LayerName string
@@ -17,14 +20,20 @@ type LayerConfiguration struct {
 	Os       string   `json:"os"`
 }
 
+func GetFieldFromStruct(structure interface{}, field string) reflect.Value {
+	return reflect.Indirect(reflect.ValueOf(structure)).FieldByName(field)
+}
+
 type config struct {
-	CacheDir      string
-	ExtensionsDir string
+	CacheDir        string
+	ExtensionsDir   string
+	ExtensionsMount string
 }
 
 const (
 	CurrentBlobName      = "current_blob"
 	ValidSysextExtension = ".sysext.raw"
+	MetadataFileName     = "metadata.json"
 )
 
 var Config = &config{}
