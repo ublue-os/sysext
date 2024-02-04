@@ -37,6 +37,7 @@ var (
 	fOutputPath        *string
 	fNoBuildCache      *bool
 	fNoPull            *bool
+	fKeep              *bool
 )
 
 func init() {
@@ -48,6 +49,7 @@ func init() {
 	fOutputPath = BuildCmd.Flags().StringP("output-path", "o", "", "Path of the file for the image")
 	fNoBuildCache = BuildCmd.Flags().Bool("no-build-cache", true, "Do not use the build cache or create anything related to it")
 	fNoPull = BuildCmd.Flags().Bool("no-pull", false, "Do not pull the nix image even if conditions are met")
+	fKeep = BuildCmd.Flags().Bool("keep", false, "Keep the build containers instead of getting rid of them (Mostly for debugging issues)")
 }
 
 func generateBCache(ctx context.Context, cache_path string, full_image_name string) error {
@@ -88,7 +90,7 @@ func generateBCache(ctx context.Context, cache_path string, full_image_name stri
 		return err
 	}
 
-	if _, err := containers.Remove(ctx, createResponse.ID, nil); err != nil {
+	if _, err := containers.Remove(ctx, createResponse.ID, nil); err != nil && *fKeep {
 		return err
 	}
 
@@ -171,11 +173,6 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
 	build_cache, err := filepath.Abs(path.Clean(*fBuildCache))
 	if err != nil {
 		return err
@@ -191,13 +188,23 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
+	var out_path string
+	if *fOutputPath != "" {
+		out_path = *fOutputPath
+	} else {
+		out_path = path.Join(pwd, configuration.Name+internal.ValidSysextExtension)
+	}
 	nix_flags := "--extra-experimental-features nix-command --extra-experimental-features flakes --impure"
 
 	spec := specgen.NewSpecGenerator(full_image_name, false)
 	spec.Mounts = append(spec.Mounts, specs.Mount{
-		Source:      pwd,
-		Destination: "/app",
+		Source:      path.Dir(out_path),
+		Destination: "/out",
 		Type:        define.TypeBind,
 	})
 	spec.Mounts = append(spec.Mounts, specs.Mount{
@@ -212,15 +219,9 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 			Type:        define.TypeBind,
 		})
 	}
-	var out_path string
-	if *fOutputPath != "" {
-		out_path = *fOutputPath
-	} else {
-		out_path = configuration.Name + internal.ValidSysextExtension
-	}
 
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
-	spec.WorkDir = "/app"
+	spec.WorkDir = "/out"
 	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("nix build %s %s#%s -o result && cp -f ./result %s && rm ./result", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, out_path)}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
 	if err != nil {
@@ -235,7 +236,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil {
+	if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil && !*fKeep {
 		return err
 	}
 
