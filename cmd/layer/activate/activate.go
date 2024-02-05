@@ -1,6 +1,7 @@
 package activate
 
 import (
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,6 +15,12 @@ var ActivateCmd = &cobra.Command{
 	Short: "Activate a layer and refresh sysext",
 	Long:  `Activate a selected layer (symlink it to /var/lib/extensions) and refresh the system extensions store.`,
 	RunE:  activateCmd,
+}
+
+var fQuiet *bool
+
+func init() {
+	ActivateCmd.Flags().BoolP("quiet", "q", false, "Do not print anything on success")
 }
 
 func activateCmd(cmd *cobra.Command, args []string) error {
@@ -46,5 +53,8 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if !*fQuiet {
+		log.Println("Successfully activated layer")
+	}
 	return nil
 }

@@ -15,9 +15,11 @@ import (
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/bindings/images"
 	"github.com/containers/podman/v4/pkg/specgen"
+	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/percentmanager"
 	"github.com/ublue-os/sysext/pkg/untar"
 )
 
@@ -120,6 +122,11 @@ func generateBCache(ctx context.Context, cache_path string, full_image_name stri
 }
 
 func buildCmd(cmd *cobra.Command, args []string) error {
+	pw := percent.NewProgressWriter()
+	build_tracker := percent.NewIncrementTracker(&progress.Tracker{Message: "Building image", Total: int64(100), Units: progress.UnitsDefault}, 7)
+	go pw.Render()
+	pw.AppendTracker(build_tracker.Tracker)
+
 	if len(args) < 1 {
 		return internal.NewPositionalError("CONFIG")
 	}
@@ -150,6 +157,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	build_tracker.IncrementSection()
 
 	full_image_name := *fNixosImage + ":" + *fNixosImageTag
 
@@ -167,9 +175,14 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		if !already_has_image {
+			tracker := progress.Tracker{Message: "Pulling image", Total: int64(100), Units: progress.UnitsDefault}
+			pw.AppendTracker(&tracker)
+
+			tracker.Increment(0)
 			if _, err := images.Pull(conn, full_image_name, &images.PullOptions{}); err != nil {
 				return err
 			}
+			tracker.Increment(100)
 		}
 	}
 
@@ -183,11 +196,14 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		build_cache_contains = []fs.DirEntry{}
 	}
 
+	build_tracker.IncrementSection()
 	if len(build_cache_contains) == 0 && !*fNoBuildCache {
 		if err := generateBCache(conn, build_cache, full_image_name); err != nil {
+			build_tracker.Tracker.MarkAsErrored()
 			return err
 		}
 	}
+
 	pwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -197,11 +213,13 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	if *fOutputPath != "" {
 		out_path, err = filepath.Abs(path.Clean(*fOutputPath))
 		if err != nil {
+			build_tracker.Tracker.MarkAsErrored()
 			return err
 		}
 	} else {
 		out_path, err = filepath.Abs(path.Join(pwd, configuration.Name+internal.ValidSysextExtension))
 		if err != nil {
+			build_tracker.Tracker.MarkAsErrored()
 			return err
 		}
 	}
@@ -229,25 +247,35 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		})
 	}
 
+	build_tracker.IncrementSection()
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
 	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
 	if err != nil {
+		build_tracker.Tracker.MarkAsErrored()
 		return err
 	}
 
+	build_tracker.IncrementSection()
 	if err := containers.Start(conn, createResponse.ID, nil); err != nil {
+		build_tracker.Tracker.MarkAsErrored()
 		return err
 	}
 
+	build_tracker.IncrementSection()
 	if _, err := containers.Wait(conn, createResponse.ID, nil); err != nil {
+		build_tracker.Tracker.MarkAsErrored()
 		return err
 	}
 
+	build_tracker.IncrementSection()
 	if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil && !*fKeep {
+		build_tracker.Tracker.MarkAsErrored()
 		return err
 	}
+
+	build_tracker.Tracker.MarkAsDone()
 
 	return nil
 }
