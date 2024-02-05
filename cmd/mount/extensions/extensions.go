@@ -30,7 +30,9 @@ func extensionsCmd(cmd *cobra.Command, args []string) error {
 		command = append(command, "--force")
 	}
 
-	if !*fRefresh {
+	if *fRefresh {
+		command = append(command, "refresh")
+	} else {
 		command = append(command, "merge")
 	}
 
