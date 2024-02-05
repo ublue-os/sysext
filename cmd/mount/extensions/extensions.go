@@ -24,20 +24,19 @@ func init() {
 }
 
 func extensionsCmd(cmd *cobra.Command, args []string) error {
-	var (
-		force_flag     string = ""
-		sysext_command        = "refresh"
-	)
+	var command []string
+
 	if *fForce {
-		force_flag = "--force"
+		command = append(command, "--force")
 	}
 
 	if !*fRefresh {
-		sysext_command = "merge"
+		command = append(command, "merge")
 	}
 
-	out, err := exec.Command("systemd-sysext", sysext_command, force_flag).Output()
+	out, err := exec.Command("systemd-sysext", command...).Output()
 	if err != nil {
+		fmt.Printf("%s\n", out)
 		return err
 	}
 	fmt.Printf("%s\n", out)

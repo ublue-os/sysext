@@ -32,6 +32,9 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	path_path, err := filepath.Abs(path.Clean(*fPathPath))
+	if err != nil {
+		return err
+	}
 
 	layers, err := os.ReadDir(extensions_mount)
 	if err != nil {
@@ -51,14 +54,6 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	} else if len(layers) == 1 {
 		mount_path := path.Join(extensions_mount, layers[0].Name(), "bin")
-
-		if _, err := os.Stat(mount_path); err == nil {
-			err := syscall.Unmount(mount_path, int(syscall.MNT_FORCE))
-			if err != nil {
-				return err
-			}
-		}
-
 		if err := syscall.Mount(mount_path, path_path, "bind", uintptr(syscall.MS_BIND|syscall.MS_RDONLY), ""); err != nil {
 			return err
 		}
