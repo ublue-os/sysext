@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/cmd/layer"
+	"github.com/ublue-os/sysext/cmd/mount"
 )
 
 var RootCmd = &cobra.Command{
@@ -28,6 +29,6 @@ func Execute() {
 
 func init() {
 	RootCmd.AddCommand(layer.LayerCmd)
-	RootCmd.AddCommand(MountCmd)
+	RootCmd.AddCommand(mount.MountCmd)
 	RootCmd.AddCommand(AddToPathCmd)
 }
