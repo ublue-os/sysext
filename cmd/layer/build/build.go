@@ -212,17 +212,20 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		Source:      path.Dir(out_path),
 		Destination: "/out",
 		Type:        define.TypeBind,
+		Options:     []string{"Z", "rw"},
 	})
 	spec.Mounts = append(spec.Mounts, specs.Mount{
 		Source:      config_file_path,
 		Destination: "/config.json",
 		Type:        define.TypeBind,
+		Options:     []string{"Z", "ro"},
 	})
 	if len(build_cache_contains) != 0 && !*fNoBuildCache {
 		spec.Mounts = append(spec.Mounts, specs.Mount{
 			Source:      build_cache,
 			Destination: "/nix/store",
 			Type:        define.TypeBind,
+			Options:     []string{"Z", "ro"},
 		})
 	}
 
