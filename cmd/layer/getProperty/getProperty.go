@@ -32,8 +32,9 @@ Supported properties:
 }
 
 var (
-	fFromFile  *string
-	fSeparator *string
+	fFromFile    *string
+	fSeparator   *string
+	validOptions []string = []string{"NAME", "PACKAGES", "ARCH", "OS", "BINARIES", "ISMOUNTED"}
 )
 
 func init() {
@@ -77,8 +78,12 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 	t.SetTitle(unmarshalled_config.Name)
 	t.Style().Options.SeparateRows = true
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: unmarshalled_config.Name, Align: text.AlignRight, VAlign: text.VAlignMiddle},
+		{Name: unmarshalled_config.Name, Align: text.AlignCenter, VAlign: text.VAlignMiddle},
 	})
+
+	if len(args) == 0 {
+		args = validOptions
+	}
 
 	for _, property := range args {
 		upper_prop_name := strings.ToUpper(property)
@@ -126,7 +131,7 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 		}
 		t.AppendRow(table.Row{property_name, value_get})
 	}
-	fmt.Printf("%s", t.Render())
+	fmt.Printf("%s\n", t.Render())
 
 	return nil
 }

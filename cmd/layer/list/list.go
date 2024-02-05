@@ -5,8 +5,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
-	"github.com/jedib0t/go-pretty/v6/list"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
 	"github.com/ublue-os/sysext/pkg/fileio"
@@ -24,6 +26,7 @@ var (
 	fQuiet     *bool
 	fVerbose   *bool
 	fActivated *bool
+	fSeparator *string
 )
 
 func init() {
@@ -31,6 +34,7 @@ func init() {
 	fLayer = ListCmd.Flags().StringP("layer", "l", "", "List hashes inside the target layer")
 	fQuiet = ListCmd.Flags().BoolP("quiet", "q", false, "Only check for layer or hash existence instead of listing")
 	fActivated = ListCmd.Flags().Bool("activated", false, "List only activated layers")
+	fSeparator = ListCmd.Flags().StringP("separator", "s", "\n", "Separator for listing things like arrays")
 }
 
 func Btoi(b bool) int {
@@ -41,14 +45,10 @@ func Btoi(b bool) int {
 }
 
 func listCmd(cmd *cobra.Command, args []string) error {
-	l := list.NewWriter()
-	l.SetStyle(list.StyleConnectedRounded)
-
 	cache_dir, err := filepath.Abs(path.Clean(internal.Config.CacheDir))
 	if err != nil {
 		return err
 	}
-
 	if *fQuiet {
 		if len(args) < 1 {
 			fmt.Fprintln(os.Stderr, "Required positional argument LAYER.\nNote: Use -l as a hash for this argument")
@@ -66,59 +66,58 @@ func listCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if *fLayer != "" {
-		layerdir, err := os.ReadDir(path.Join(cache_dir, *fLayer))
-		if err != nil {
-			return err
+	t := table.NewWriter()
+	t.SetStyle(table.StyleRounded)
+	t.SetTitle("Layers")
+	t.Style().Options.SeparateRows = true
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Name: "Layers", Align: text.AlignCenter, VAlign: text.VAlignMiddle},
+		{Name: "Binaries", Align: text.AlignCenter, VAlign: text.VAlignMiddle},
+	})
+
+	for _, dir := range dirdata {
+		if !dir.IsDir() {
+			continue
+		}
+		if *fLayer != "" && dir.Name() != *fLayer {
+			continue
+		}
+		if _, err := os.Stat(path.Join(internal.Config.ExtensionsDir, dir.Name()+internal.ValidSysextExtension)); err != nil && *fActivated {
+			continue
 		}
 
-		for _, blob := range layerdir {
-			if blob.Name() == internal.CurrentBlobName {
-				continue
+		var blobs []string
+		if *fVerbose {
+			layerdir, err := os.ReadDir(path.Join(cache_dir, dir.Name()))
+			if err != nil {
+				return err
 			}
-			l.AppendItem(blob.Name())
-		}
-	} else {
-		for _, dir := range dirdata {
-			if !dir.IsDir() {
-				continue
-			}
-			if *fActivated {
-				if _, err := os.Stat(path.Join(internal.Config.ExtensionsDir, dir.Name()+internal.ValidSysextExtension)); err != nil {
+
+			for _, blob := range layerdir {
+				if blob.Name() == internal.CurrentBlobName {
+					fstat, err := filepath.EvalSymlinks(path.Join(cache_dir, dir.Name(), blob.Name()))
+					if err != nil {
+						return err
+					}
+					blobs = append(blobs, fmt.Sprintf("%s -> %s", blob.Name(), path.Base(fstat)))
 					continue
 				}
-			}
-
-			l.AppendItem(dir.Name())
-
-			if *fVerbose {
-				l.Indent()
-				layerdir, err := os.ReadDir(path.Join(cache_dir, dir.Name()))
-				if err != nil {
-					return err
-				}
-
-				for _, blob := range layerdir {
-					if blob.Name() == internal.CurrentBlobName {
-						fstat, err := filepath.EvalSymlinks(path.Join(cache_dir, dir.Name(), blob.Name()))
-						if err != nil {
-							return err
-						}
-						l.AppendItem(fmt.Sprintf("%s -> %s", blob.Name(), path.Base(fstat)))
-						continue
-					}
-					l.AppendItem(blob.Name())
-				}
-				l.UnIndent()
+				blobs = append(blobs, blob.Name())
 			}
 		}
+
+		if len(blobs) == 0 {
+			t.AppendRow(table.Row{dir.Name()})
+			continue
+		}
+		t.AppendRow(table.Row{dir.Name(), strings.Join(blobs, *fSeparator)})
 	}
 
-	if l.Length() == 0 {
+	if t.Length() == 0 {
 		fmt.Println("No layers found")
 		return nil
 	}
 
-	fmt.Printf("%s", l.Render())
+	fmt.Printf("%s\n", t.Render())
 	return nil
 }

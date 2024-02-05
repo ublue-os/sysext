@@ -7,6 +7,7 @@ require github.com/spf13/cobra v1.8.0 // direct
 require (
 	github.com/containers/podman/v4 v4.9.2
 	github.com/jedib0t/go-pretty/v6 v6.5.4
+	github.com/opencontainers/runtime-spec v1.1.1-0.20230922153023-c0e90434df2a
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -93,7 +94,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/opencontainers/runc v1.1.10 // indirect
-	github.com/opencontainers/runtime-spec v1.1.1-0.20230922153023-c0e90434df2a // indirect
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
