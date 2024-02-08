@@ -56,6 +56,9 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		syscall.Unmount("/nix/store", 0)
+		syscall.Unmount(bindmount_path, 0)
+
 		if err := syscall.Mount("/nix/store", bindmount_path, "bind", uintptr(syscall.MS_BIND), ""); err != nil {
 			return err
 		}

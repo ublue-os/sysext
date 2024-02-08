@@ -54,17 +54,18 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	} else if len(layers) == 1 {
 		mount_path := path.Join(extensions_mount, layers[0].Name(), "bin")
+		if _, err := os.Stat(path_path); err == nil {
+			syscall.Unmount(path_path, 0)
+		}
 		if err := syscall.Mount(mount_path, path_path, "bind", uintptr(syscall.MS_BIND|syscall.MS_RDONLY), ""); err != nil {
 			return err
 		}
 	} else {
 		if _, err := os.Stat(path_path); err == nil {
-			err := syscall.Unmount(path_path, int(syscall.MNT_FORCE))
-			if err != nil {
-				return err
-			}
+			syscall.Unmount(path_path, 0)
 		}
 
+		syscall.Unmount(path_path, 0)
 		err = syscall.Mount("none", path_path, "overlayfs", uintptr(syscall.MS_RDONLY|syscall.MS_NODEV|syscall.MS_NOATIME), "lowerdir="+strings.Join(valid_layers, ":"))
 		if err != nil {
 			return err
