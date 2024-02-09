@@ -230,7 +230,6 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("here?\n\n")
 	build_tracker.IncrementSection()
 	if _, err := containers.Wait(conn, createResponse.ID, nil); err != nil {
 		build_tracker.Tracker.MarkAsErrored()
