@@ -25,7 +25,7 @@
           '';
         };
         bext_deps = {
-          build = with pkgs; [go pkg-config ];
+          build = with pkgs; [go pkg-config];
           runtime = with pkgs; [btrfs-progs gpgme lvm2];
         };
       in {
@@ -46,12 +46,19 @@
             vendorHash = "sha256-tJMrrMWLcfYstD9I1poDpT5MX75066k7hUjfTDCv/i4=";
           };
 
-          # This should work, but for some reason there is some issue with `ld -lgpgme` and `ld -ldevmapper`
           bextStatic = self.packages.${system}.bext.overrideAttrs (final: oldAttrs: {
+            nativeBuildInputs = [pkgs.musl] ++ oldAttrs.nativeBuildInputs;
+
+            LDFLAGS = [
+              "-static"
+              "-L${pkgs.musl}/lib"
+              "-L${pkgs.gpgme}/lib"
+              "-L${pkgs.lvm2}/lib"
+            ];
+
             ldflags = [
               "-linkmode external"
-              "-extldflags '-static -L${pkgs.musl}/lib'"
-            ] ++ oldAttrs.ldflags;
+            ];
           });
 
           bake-recipe =
