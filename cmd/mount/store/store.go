@@ -1,12 +1,14 @@
 package store
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/ublue-os/sysext/pkg/chattr"
 	"os"
 	"path"
 	"path/filepath"
 	"syscall"
+
+	"github.com/spf13/cobra"
+	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/chattr"
 )
 
 var StoreCmd = &cobra.Command{
@@ -27,6 +29,21 @@ func init() {
 }
 
 func storeCmd(cmd *cobra.Command, args []string) error {
+	bindmount_path, err := filepath.Abs(path.Clean(*fStoreBindmountPath))
+	if err != nil {
+		return err
+	}
+
+	if *internal.Config.UnmountFlag {
+		if err := syscall.Unmount("/nix/store", 0); err != nil {
+			return err
+		}
+		if err := syscall.Unmount(bindmount_path, 0); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	if _, err := os.Stat("/nix"); err != nil {
 		root_dir, err := os.Open("/")
 		if err != nil {
@@ -39,11 +56,6 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		chattr.UnsetAttr(root_dir, chattr.FS_IMMUTABLE_FL)
-	}
-
-	bindmount_path, err := filepath.Abs(path.Clean(*fStoreBindmountPath))
-	if err != nil {
-		return err
 	}
 
 	store_contents, err := os.ReadDir("/nix/store")

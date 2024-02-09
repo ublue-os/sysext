@@ -2,8 +2,10 @@ package extensions
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os/exec"
+
+	"github.com/spf13/cobra"
+	"github.com/ublue-os/sysext/internal"
 )
 
 var ExtensionsCmd = &cobra.Command{
@@ -24,6 +26,7 @@ func init() {
 }
 
 func extensionsCmd(cmd *cobra.Command, args []string) error {
+
 	var command []string
 
 	if *fForce {
@@ -32,6 +35,8 @@ func extensionsCmd(cmd *cobra.Command, args []string) error {
 
 	if *fRefresh {
 		command = append(command, "refresh")
+	} else if *internal.Config.UnmountFlag {
+		command = append(command, "unmerge")
 	} else {
 		command = append(command, "merge")
 	}

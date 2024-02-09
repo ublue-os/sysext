@@ -29,6 +29,7 @@ type config struct {
 	ExtensionsDir   string
 	ExtensionsMount string
 	StoreDir        string
+	UnmountFlag     *bool
 }
 
 const (

@@ -5,6 +5,7 @@ import (
 	"github.com/ublue-os/sysext/cmd/mount/extensions"
 	"github.com/ublue-os/sysext/cmd/mount/path"
 	"github.com/ublue-os/sysext/cmd/mount/store"
+	"github.com/ublue-os/sysext/internal"
 )
 
 var MountCmd = &cobra.Command{
@@ -17,4 +18,5 @@ func init() {
 	MountCmd.AddCommand(extensions.ExtensionsCmd)
 	MountCmd.AddCommand(store.StoreCmd)
 	MountCmd.AddCommand(path.PathCmd)
+	internal.Config.UnmountFlag = MountCmd.PersistentFlags().BoolP("unmount", "u", false, "Unmount instead of mounting")
 }

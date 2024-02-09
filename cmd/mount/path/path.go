@@ -27,13 +27,21 @@ func init() {
 }
 
 func pathCmd(cmd *cobra.Command, args []string) error {
-	extensions_mount, err := filepath.Abs(path.Clean(internal.Config.ExtensionsMount))
-	if err != nil {
-		return nil
-	}
 	path_path, err := filepath.Abs(path.Clean(*fPathPath))
 	if err != nil {
 		return err
+	}
+
+	if *internal.Config.UnmountFlag {
+		if err := syscall.Unmount(path_path, 0); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	extensions_mount, err := filepath.Abs(path.Clean(internal.Config.ExtensionsMount))
+	if err != nil {
+		return nil
 	}
 
 	layers, err := os.ReadDir(extensions_mount)
