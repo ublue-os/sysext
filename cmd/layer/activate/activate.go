@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
@@ -17,10 +18,14 @@ var ActivateCmd = &cobra.Command{
 	RunE:  activateCmd,
 }
 
-var fQuiet *bool
+var (
+	fQuiet    *bool
+	fFromFile *string
+)
 
 func init() {
-	ActivateCmd.Flags().BoolP("quiet", "q", false, "Do not print anything on success")
+	fQuiet = ActivateCmd.Flags().BoolP("quiet", "q", false, "Do not print anything on success")
+	fFromFile = ActivateCmd.Flags().StringP("file", "f", "", "Activate directly from file instead of cache")
 }
 
 func activateCmd(cmd *cobra.Command, args []string) error {
@@ -29,6 +34,25 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	target_layer := args[0]
+
+	extensions_dir, err := filepath.Abs(path.Clean(internal.Config.ExtensionsDir))
+	if err != nil {
+		return err
+	}
+
+	if *fFromFile != "" {
+		if !strings.HasSuffix(target_layer, internal.ValidSysextExtension) {
+			target_layer, err = filepath.Abs(path.Clean(target_layer + internal.ValidSysextExtension))
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := os.Symlink(target_layer, path.Join(extensions_dir, target_layer)); err != nil {
+			return err
+		}
+		return nil
+	}
 
 	cache_dir, err := filepath.Abs(path.Clean(internal.Config.CacheDir))
 	if err != nil {
@@ -44,17 +68,12 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	extensions_dir, err := filepath.Abs(path.Clean(internal.Config.ExtensionsDir))
-	if err != nil {
-		return err
-	}
-
 	if err := os.Symlink(current_blob_path, path.Join(extensions_dir, path.Base(path.Dir(current_blob_path))+internal.ValidSysextExtension)); err != nil {
 		return err
 	}
 
 	if !*fQuiet {
-		log.Println("Successfully activated layer")
+		log.Printf("Successfully activated layer %s\n", path.Base(target_layer))
 	}
 	return nil
 }
