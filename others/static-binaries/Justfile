@@ -116,6 +116,9 @@ build-nix FLAKEREF PACKAGE: (container "nix")
 [private]
 container NAME:
     @echo "Building {{NAME}} container"
+    if [ {{NAME}} == "go" ] ; then \
+        @podman build -t ${USER}/{{NAME}}:latest -f builders/{{NAME}}/Containerfile . >/dev/null \
+    fi
     @podman build -t ${USER}/{{NAME}}:latest -f builders/{{NAME}}/Containerfile.{{NAME}} . >/dev/null
 
 [private]
