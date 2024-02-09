@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,13 +13,14 @@ import (
 	"github.com/containers/podman/v4/pkg/bindings"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/bindings/images"
+	"github.com/containers/podman/v4/pkg/bindings/volumes"
+	"github.com/containers/podman/v4/pkg/domain/entities"
 	"github.com/containers/podman/v4/pkg/specgen"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
 	"github.com/ublue-os/sysext/pkg/percentmanager"
-	"github.com/ublue-os/sysext/pkg/untar"
 )
 
 var BuildCmd = &cobra.Command{
@@ -31,15 +31,16 @@ var BuildCmd = &cobra.Command{
 }
 
 var (
-	fNixosImage        *string
-	fNixosImageTag     *string
-	fRecipeMakerFlake  *string
-	fRecipeMakerAction *string
-	fBuildCache        *string
-	fOutputPath        *string
-	fNoBuildCache      *bool
-	fNoPull            *bool
-	fKeep              *bool
+	fNixosImage         *string
+	fNixosImageTag      *string
+	fRecipeMakerFlake   *string
+	fRecipeMakerAction  *string
+	fBuildCache         *string
+	fOutputPath         *string
+	fNoBuildCache       *bool
+	fNoUpdateBuildCache *bool
+	fNoPull             *bool
+	fKeep               *bool
 )
 
 func init() {
@@ -50,76 +51,20 @@ func init() {
 	fBuildCache = BuildCmd.Flags().String("build-cache", "/var/cache/extensions/store", "Build cache for later images EXPERIMENTAL")
 	fOutputPath = BuildCmd.Flags().StringP("output-path", "o", "", "Path of the file for the image")
 	fNoBuildCache = BuildCmd.Flags().Bool("no-build-cache", true, "Do not use the build cache or create anything related to it")
+	fNoUpdateBuildCache = BuildCmd.Flags().Bool("no-update-build-cache", false, "Do not update the build cache with extra packages")
 	fNoPull = BuildCmd.Flags().Bool("no-pull", false, "Do not pull the nix image even if conditions are met")
 	fKeep = BuildCmd.Flags().Bool("keep", false, "Keep the build containers instead of getting rid of them (Mostly for debugging issues)")
 }
 
-func generateBCache(ctx context.Context, cache_path string, full_image_name string) error {
-	if err := os.MkdirAll(cache_path, 0755); err != nil {
-		return err
-	}
+const (
+	nixSharedStoreVName = "bext_shared_nix_store"
+	nixSharedMountPath  = "/nix_shared_mnt"
+)
 
-	spec := specgen.NewSpecGenerator(full_image_name, false)
-	spec.Command = []string{"/bin/sh", "-c", "\"wait 1\""}
-	createResponse, err := containers.CreateWithSpec(ctx, spec, nil)
-	if err != nil {
-		return err
-	}
-
-	if err := containers.Start(ctx, createResponse.ID, nil); err != nil {
-		return err
-	}
-
-	if _, err := containers.Wait(ctx, createResponse.ID, nil); err != nil {
-		return err
-	}
-
-	cache_tar := path.Join(cache_path, "initial_tar")
-	file, err := os.Create(cache_tar)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := file
-
-	copy_func, err := containers.CopyToArchive(ctx, createResponse.ID, "/nix/store", writer)
-	if err != nil {
-		return err
-	}
-	err = copy_func()
-	if err != nil {
-		return err
-	}
-
-	if _, err := containers.Remove(ctx, createResponse.ID, nil); err != nil && *fKeep {
-		return err
-	}
-
-	if err = untar.Untar(cache_path, cache_tar); err != nil {
-		return err
-	}
-	if err := os.Remove(cache_tar); err != nil {
-		return err
-	}
-
-	storepath, err := os.ReadDir(path.Join(cache_path, "store"))
-	if err != nil {
-		return err
-	}
-
-	for _, file := range storepath {
-		if err := os.Rename(path.Join(cache_path, "store", file.Name()), path.Join(cache_path, file.Name())); err != nil {
-			return err
-		}
-	}
-
-	if err := os.RemoveAll(path.Join(cache_path, "store")); err != nil {
-		return err
-	}
-
-	return nil
-}
+// bext_shared_nix_store volume or something like that
+// Unique volume name with all the options and everything accounted for as a SHA512
+// Mount layered unique nix store volume as a layered nix store
+// Use layered nix store approach to save current nix store to volume overriding old attributes on container death
 
 func buildCmd(cmd *cobra.Command, args []string) error {
 	pw := percent.NewProgressWriter()
@@ -185,24 +130,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 			tracker.Increment(100)
 		}
 	}
-
-	build_cache, err := filepath.Abs(path.Clean(*fBuildCache))
-	if err != nil {
-		return err
-	}
-
-	build_cache_contains, err := os.ReadDir(build_cache)
-	if err != nil {
-		build_cache_contains = []fs.DirEntry{}
-	}
-
 	build_tracker.IncrementSection()
-	if len(build_cache_contains) == 0 && !*fNoBuildCache {
-		if err := generateBCache(conn, build_cache, full_image_name); err != nil {
-			build_tracker.Tracker.MarkAsErrored()
-			return err
-		}
-	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -225,6 +153,19 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	}
 	nix_flags := "-L --extra-experimental-features nix-command --extra-experimental-features flakes --impure"
 
+	if !*fNoBuildCache {
+		doesit, err := volumes.Exists(conn, nixSharedStoreVName, &volumes.ExistsOptions{})
+		if err != nil {
+			return err
+		}
+		if !doesit {
+			_, err := volumes.Create(conn, entities.VolumeCreateOptions{Name: nixSharedStoreVName}, &volumes.CreateOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	spec := specgen.NewSpecGenerator(full_image_name, false)
 	spec.Mounts = append(spec.Mounts, specs.Mount{
 		Source:      path.Dir(out_path),
@@ -238,19 +179,45 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		Type:        define.TypeBind,
 		Options:     []string{"Z", "ro"},
 	})
-	if len(build_cache_contains) != 0 && !*fNoBuildCache {
-		spec.Mounts = append(spec.Mounts, specs.Mount{
-			Source:      build_cache,
-			Destination: "/nix/store",
-			Type:        define.TypeBind,
-			Options:     []string{"Z", "ro"},
+	if !*fNoBuildCache {
+		spec.Volumes = append(spec.Volumes, &specgen.NamedVolume{
+			Name:    nixSharedStoreVName,
+			Dest:    nixSharedMountPath,
+			Options: []string{"Z", "rw"},
 		})
+		spec.Devices = append(spec.Devices, specs.LinuxDevice{
+			Path: "/dev/fuse",
+		})
+		spec.CapAdd = append(spec.CapAdd, "CAP_SYS_ADMIN")
 	}
 
 	build_tracker.IncrementSection()
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
-	spec.Command = []string{"/bin/sh", "-c", fmt.Sprintf("set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result", nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))}
+
+	var container_command string = ""
+
+	if *fNoBuildCache {
+		container_command = fmt.Sprintf(`
+        set -eux ; \
+        nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result
+        `, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
+	} else {
+		var update_bcache string = ""
+		if !*fNoUpdateBuildCache {
+			update_bcache = "cp -fR /nix/store " + nixSharedMountPath
+		}
+
+		container_command = fmt.Sprintf(`
+        set -eux ; \
+        mkdir -p /work ; \
+        nix run %s nixpkgs#fuse-overlayfs -- -o lowerdir=/nix,upperdir=%s,workdir=/work /nix ; \
+        nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result ; \
+        %s 
+    `, nix_flags, nixSharedMountPath, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path), update_bcache)
+	}
+
+	spec.Command = []string{"/bin/sh", "-c", container_command}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
 	if err != nil {
 		build_tracker.Tracker.MarkAsErrored()
@@ -263,6 +230,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	fmt.Printf("here?\n\n")
 	build_tracker.IncrementSection()
 	if _, err := containers.Wait(conn, createResponse.ID, nil); err != nil {
 		build_tracker.Tracker.MarkAsErrored()
@@ -270,9 +238,11 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	build_tracker.IncrementSection()
-	if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil && !*fKeep {
-		build_tracker.Tracker.MarkAsErrored()
-		return err
+	if !*fKeep {
+		if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil {
+			build_tracker.Tracker.MarkAsErrored()
+			return err
+		}
 	}
 
 	build_tracker.Tracker.MarkAsDone()

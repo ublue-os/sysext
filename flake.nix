@@ -43,7 +43,7 @@
             pwd = ./.;
             nativeBuildInputs = bext_deps.build;
             buildInputs = bext_deps.runtime;
-            vendorHash = "sha256-tJMrrMWLcfYstD9I1poDpT5MX75066k7hUjfTDCv/i4=";
+            vendorHash = "sha256-8ecgONmkAfAZ1D0SYLQ3QOmPJbP2Lu3KFcZQ/Shf0tc=";
           };
 
           bextStatic = self.packages.${system}.bext.overrideAttrs (final: oldAttrs: {
