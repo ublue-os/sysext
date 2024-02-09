@@ -10,19 +10,7 @@ import (
 
 // Creates a file and appends the content to the file (ending newline must be supplied with content string)
 func FileAppendS(fileName string, content string) (int, error) {
-	// Open the file
-	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		return 0, err
-	}
-	defer f.Close()
-
-	var bytes_written int
-	bytes_written, err = f.WriteString(content)
-	if err != nil {
-		return bytes_written, err
-	}
-	return bytes_written, nil
+	return FileAppend(fileName, []byte(content))
 }
 
 func FileAppend(fileName string, content []byte) (int, error) {
