@@ -13,8 +13,6 @@ import (
 	"github.com/containers/podman/v4/pkg/bindings"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/bindings/images"
-	"github.com/containers/podman/v4/pkg/bindings/volumes"
-	"github.com/containers/podman/v4/pkg/domain/entities"
 	"github.com/containers/podman/v4/pkg/specgen"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/opencontainers/runtime-spec/specs-go"
