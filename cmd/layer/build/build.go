@@ -31,16 +31,13 @@ var BuildCmd = &cobra.Command{
 }
 
 var (
-	fNixosImage         *string
-	fNixosImageTag      *string
-	fRecipeMakerFlake   *string
-	fRecipeMakerAction  *string
-	fBuildCache         *string
-	fOutputPath         *string
-	fNoBuildCache       *bool
-	fNoUpdateBuildCache *bool
-	fNoPull             *bool
-	fKeep               *bool
+	fNixosImage        *string
+	fNixosImageTag     *string
+	fRecipeMakerFlake  *string
+	fRecipeMakerAction *string
+	fOutputPath        *string
+	fNoPull            *bool
+	fKeep              *bool
 )
 
 func init() {
@@ -48,23 +45,10 @@ func init() {
 	fNixosImageTag = BuildCmd.Flags().StringP("tag", "t", "latest", "Image tag used for the building container")
 	fRecipeMakerFlake = BuildCmd.Flags().StringP("recipe-flake", "r", "github:tulilirockz/sysext", "Nix flake that will be used as base for building the image")
 	fRecipeMakerAction = BuildCmd.Flags().StringP("recipe-action", "a", "bake-recipe", "Derivation that will be built on recipe-flake")
-	fBuildCache = BuildCmd.Flags().String("build-cache", "/var/cache/extensions/store", "Build cache for later images EXPERIMENTAL")
 	fOutputPath = BuildCmd.Flags().StringP("output-path", "o", "", "Path of the file for the image")
-	fNoBuildCache = BuildCmd.Flags().Bool("no-build-cache", true, "Do not use the build cache or create anything related to it")
-	fNoUpdateBuildCache = BuildCmd.Flags().Bool("no-update-build-cache", false, "Do not update the build cache with extra packages")
 	fNoPull = BuildCmd.Flags().Bool("no-pull", false, "Do not pull the nix image even if conditions are met")
 	fKeep = BuildCmd.Flags().Bool("keep", false, "Keep the build containers instead of getting rid of them (Mostly for debugging issues)")
 }
-
-const (
-	nixSharedStoreVName = "bext_shared_nix_store"
-	nixSharedMountPath  = "/nix_shared_mnt"
-)
-
-// bext_shared_nix_store volume or something like that
-// Unique volume name with all the options and everything accounted for as a SHA512
-// Mount layered unique nix store volume as a layered nix store
-// Use layered nix store approach to save current nix store to volume overriding old attributes on container death
 
 func buildCmd(cmd *cobra.Command, args []string) error {
 	pw := percent.NewProgressWriter()
@@ -153,19 +137,6 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	}
 	nix_flags := "-L --extra-experimental-features nix-command --extra-experimental-features flakes --impure"
 
-	if !*fNoBuildCache {
-		doesit, err := volumes.Exists(conn, nixSharedStoreVName, &volumes.ExistsOptions{})
-		if err != nil {
-			return err
-		}
-		if !doesit {
-			_, err := volumes.Create(conn, entities.VolumeCreateOptions{Name: nixSharedStoreVName}, &volumes.CreateOptions{})
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	spec := specgen.NewSpecGenerator(full_image_name, false)
 	spec.Mounts = append(spec.Mounts, specs.Mount{
 		Source:      path.Dir(out_path),
@@ -179,17 +150,6 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		Type:        define.TypeBind,
 		Options:     []string{"Z", "ro"},
 	})
-	if !*fNoBuildCache {
-		spec.Volumes = append(spec.Volumes, &specgen.NamedVolume{
-			Name:    nixSharedStoreVName,
-			Dest:    nixSharedMountPath,
-			Options: []string{"Z", "rw"},
-		})
-		spec.Devices = append(spec.Devices, specs.LinuxDevice{
-			Path: "/dev/fuse",
-		})
-		spec.CapAdd = append(spec.CapAdd, "CAP_SYS_ADMIN")
-	}
 
 	build_tracker.IncrementSection()
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
@@ -197,25 +157,10 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 
 	var container_command string = ""
 
-	if *fNoBuildCache {
-		container_command = fmt.Sprintf(`
-        set -eux ; \
-        nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result
-        `, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
-	} else {
-		var update_bcache string = ""
-		if !*fNoUpdateBuildCache {
-			update_bcache = "cp -fR /nix/store " + nixSharedMountPath
-		}
-
-		container_command = fmt.Sprintf(`
-        set -eux ; \
-        mkdir -p /work ; \
-        nix run %s nixpkgs#fuse-overlayfs -- -o lowerdir=/nix,upperdir=%s,workdir=/work /nix ; \
-        nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result ; \
-        %s 
-    `, nix_flags, nixSharedMountPath, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path), update_bcache)
-	}
+	container_command = fmt.Sprintf(`
+    set -eux ; \
+    nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result
+    `, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
 
 	spec.Command = []string{"/bin/sh", "-c", container_command}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)

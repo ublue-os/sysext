@@ -30,7 +30,7 @@
         };
       in {
         formatter = pkgs.alejandra;
-        devShells.default = pkgs.mkShell.override {stdenv = pkgs.llvmPackages_14.stdenv;} {
+        devShells.default = pkgs.mkShell {
           packages = with pkgs; [cobra-cli gopls eclint] ++ bext_deps.build ++ bext_deps.runtime;
         };
         packages = {
