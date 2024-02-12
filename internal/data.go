@@ -30,6 +30,7 @@ type config struct {
 	ExtensionsMount string
 	StoreDir        string
 	UnmountFlag     *bool
+	NoProgress      *bool
 }
 
 const (

@@ -1,9 +1,9 @@
 package path
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,6 +36,7 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 		if err := syscall.Unmount(path_path, 0); err != nil {
 			return err
 		}
+		slog.Info("Successfuly unmounted path "+path_path, slog.String("path", path_path))
 		return nil
 	}
 
@@ -58,11 +59,12 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(layers) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: No layers are mounted")
+		slog.Warn("No layers are mounted")
 		os.Exit(1)
 	} else if len(layers) == 1 {
 		mount_path := path.Join(extensions_mount, layers[0].Name(), "bin")
 		if _, err := os.Stat(path_path); err == nil {
+			slog.Debug("Unmounting", slog.String("path", path_path))
 			syscall.Unmount(path_path, 0)
 		}
 		if err := syscall.Mount(mount_path, path_path, "bind", uintptr(syscall.MS_BIND|syscall.MS_RDONLY), ""); err != nil {
@@ -70,6 +72,7 @@ func pathCmd(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		if _, err := os.Stat(path_path); err == nil {
+			slog.Debug("Unmounting", slog.String("path", path_path))
 			syscall.Unmount(path_path, 0)
 		}
 

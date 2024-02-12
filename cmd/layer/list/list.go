@@ -2,6 +2,7 @@ package list
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -27,6 +28,7 @@ var (
 	fVerbose   *bool
 	fActivated *bool
 	fSeparator *string
+	fLogOnly   *bool
 )
 
 func init() {
@@ -35,6 +37,7 @@ func init() {
 	fQuiet = ListCmd.Flags().BoolP("quiet", "q", false, "Only check for layer or hash existence instead of listing")
 	fActivated = ListCmd.Flags().Bool("activated", false, "List only activated layers")
 	fSeparator = ListCmd.Flags().StringP("separator", "s", "\n", "Separator for listing things like arrays")
+	fLogOnly = ListCmd.Flags().Bool("log", false, "Do not make a table, just log everything")
 }
 
 func Btoi(b bool) int {
@@ -49,16 +52,17 @@ func listCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
 	if *fQuiet {
 		if len(args) < 1 {
-			fmt.Fprintln(os.Stderr, "Required positional argument LAYER.\nNote: Use -l as a hash for this argument")
-			os.Exit(1)
+			return internal.NewPositionalError("LAYER")
 		}
 		layer := args[0]
-		if *fLayer != "" {
-			os.Exit(Btoi(fileio.FileExist(path.Join(cache_dir, layer, *fLayer))))
+		if len(args) > 1 {
+			hash := args[1]
+			os.Exit(Btoi(fileio.FileExist(path.Join(cache_dir, layer, hash))))
 		}
-		os.Exit(Btoi(fileio.FileExist(path.Join(cache_dir, *fLayer))))
+		os.Exit(Btoi(fileio.FileExist(path.Join(cache_dir, layer))))
 	}
 
 	dirdata, err := os.ReadDir(cache_dir)
@@ -107,17 +111,21 @@ func listCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		if len(blobs) == 0 {
+			slog.Info(dir.Name(), slog.String("blobs", ""))
 			t.AppendRow(table.Row{dir.Name()})
 			continue
 		}
+		slog.Info(dir.Name(), slog.String("blobs", strings.Join(blobs, ":")))
 		t.AppendRow(table.Row{dir.Name(), strings.Join(blobs, *fSeparator)})
 	}
 
 	if t.Length() == 0 {
-		fmt.Println("No layers found")
+		slog.Warn("No layers found")
 		return nil
 	}
 
-	fmt.Printf("%s\n", t.Render())
+	if !*fLogOnly {
+		fmt.Printf("%s\n", t.Render())
+	}
 	return nil
 }

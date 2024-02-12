@@ -2,6 +2,7 @@ package clean
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/logging"
 	"github.com/ublue-os/sysext/pkg/percentmanager"
 )
 
@@ -64,7 +66,6 @@ func cleanCmd(cmd *cobra.Command, args []string) error {
 
 	base_message := "Cleaning "
 	pw := percent.NewProgressWriter()
-	go pw.Render()
 
 	var expectedSections int
 	for _, entry := range target_cache {
@@ -108,14 +109,21 @@ func cleanCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	delete_tracker := percent.NewIncrementTracker(&progress.Tracker{Message: base_message, Total: int64(100), Units: progress.UnitsDefault}, expectedSections)
-	go pw.Render()
 	pw.AppendTracker(delete_tracker.Tracker)
+
+	if !*internal.Config.NoProgress {
+		go pw.Render()
+		slog.SetDefault(logging.NewMuteLogger())
+	}
 
 	for _, entry := range target_cache {
 		if !entry.IsDir() {
 			continue
 		}
-		delete_tracker.Tracker.Message = base_message + entry.Name()
+		logmessage := base_message + entry.Name()
+		delete_tracker.Tracker.Message = logmessage
+		slog.Info(logmessage)
+
 		entry_dir_path := path.Join(cache_dir, entry.Name())
 		entry_dir, err := os.ReadDir(entry_dir_path)
 		if err != nil {
@@ -154,6 +162,7 @@ func cleanCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		for _, cleanthing := range clean {
+			slog.Debug("Clean -> " + cleanthing)
 			if slices.Contains(do_not_clean, cleanthing) || *fDryRun {
 				continue
 			}

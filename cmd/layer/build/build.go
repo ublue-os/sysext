@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,6 +19,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/logging"
 	"github.com/ublue-os/sysext/pkg/percentmanager"
 )
 
@@ -50,8 +52,30 @@ func init() {
 
 func buildCmd(cmd *cobra.Command, args []string) error {
 	pw := percent.NewProgressWriter()
-	build_tracker := percent.NewIncrementTracker(&progress.Tracker{Message: "Building image", Total: int64(100), Units: progress.UnitsDefault}, 7)
-	go pw.Render()
+
+	var (
+		expectedSections = 6
+		expectedTrackers = 1
+	)
+
+	if *fKeep {
+		expectedSections--
+	}
+	if !*fNoPull {
+		expectedTrackers++
+	}
+
+	pw.SetNumTrackersExpected(expectedTrackers)
+	build_tracker := percent.NewIncrementTracker(&progress.Tracker{
+		Message: "Building image",
+		Total:   int64(100),
+		Units:   progress.UnitsDefault},
+		expectedSections)
+
+	if !*internal.Config.NoProgress {
+		go pw.Render()
+		slog.SetDefault(logging.NewMuteLogger())
+	}
 	pw.AppendTracker(build_tracker.Tracker)
 
 	if len(args) < 1 {
@@ -102,6 +126,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		if !already_has_image {
+			slog.Info("Pulling image", slog.String("image name", full_image_name))
 			tracker := progress.Tracker{Message: "Pulling image", Total: int64(100), Units: progress.UnitsDefault}
 			pw.AppendTracker(&tracker)
 
@@ -133,6 +158,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
 	nix_flags := "-L --extra-experimental-features nix-command --extra-experimental-features flakes --impure"
 
 	spec := specgen.NewSpecGenerator(full_image_name, false)
@@ -153,12 +179,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
 
-	var container_command string = ""
-
-	container_command = fmt.Sprintf(`
-    set -eux ; \
-    nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result
-    `, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
+	container_command := fmt.Sprintf(`set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result`, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
 
 	spec.Command = []string{"/bin/sh", "-c", container_command}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)
@@ -167,12 +188,14 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	slog.Info("Starting build container", slog.String("containerID", createResponse.ID))
 	build_tracker.IncrementSection()
 	if err := containers.Start(conn, createResponse.ID, nil); err != nil {
 		build_tracker.Tracker.MarkAsErrored()
 		return err
 	}
 
+	slog.Info("Waiting for container response", slog.String("containerID", createResponse.ID))
 	build_tracker.IncrementSection()
 	if _, err := containers.Wait(conn, createResponse.ID, nil); err != nil {
 		build_tracker.Tracker.MarkAsErrored()
@@ -181,13 +204,16 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 
 	build_tracker.IncrementSection()
 	if !*fKeep {
+		slog.Debug("Deleting build container", slog.String("containerID", createResponse.ID))
 		if _, err := containers.Remove(conn, createResponse.ID, nil); err != nil {
 			build_tracker.Tracker.MarkAsErrored()
 			return err
 		}
+		build_tracker.Tracker.MarkAsDone()
 	}
-
 	build_tracker.Tracker.MarkAsDone()
+
+	slog.Info(fmt.Sprintf("Successfully built %s", path.Base(out_path)), slog.String("containerId", createResponse.ID), slog.String("imagename", out_path))
 
 	return nil
 }

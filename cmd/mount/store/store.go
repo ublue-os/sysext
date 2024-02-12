@@ -1,6 +1,7 @@
 package store
 
 import (
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,12 +36,16 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if *internal.Config.UnmountFlag {
+		slog.Debug("Unmounting store", slog.String("target", "/nix/store"))
 		if err := syscall.Unmount("/nix/store", 0); err != nil {
 			return err
 		}
+
+		slog.Debug("Unmounting bindmount", slog.String("target", bindmount_path))
 		if err := syscall.Unmount(bindmount_path, 0); err != nil {
 			return err
 		}
+		slog.Info("Successfully unmounted store and bindmount", slog.String("store_path", "/nix/store"), slog.String("bindmount_path", bindmount_path))
 		return nil
 	}
 
@@ -51,6 +56,7 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 		}
 		defer root_dir.Close()
 
+		slog.Debug("Creating nix store", slog.String("target", "/nix/store"))
 		chattr.SetAttr(root_dir, chattr.FS_IMMUTABLE_FL)
 		if err := os.Mkdir("/nix/store", 0755); err != nil {
 			return err
@@ -71,6 +77,7 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 		syscall.Unmount("/nix/store", 0)
 		syscall.Unmount(bindmount_path, 0)
 
+		slog.Debug("Mounting store to itself", slog.String("source", "/nix/store"), slog.String("target", bindmount_path))
 		if err := syscall.Mount("/nix/store", bindmount_path, "bind", uintptr(syscall.MS_BIND), ""); err != nil {
 			return err
 		}
@@ -85,6 +92,7 @@ func storeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if _, err := os.Stat("/nix"); err == nil {
+		slog.Info("Mounting /usr/store to /nix/store", slog.String("source", "/usr/store"), slog.String("target", "/nix/store"))
 		if err := syscall.Mount("/usr/store", "/nix/store", "bind", uintptr(syscall.MS_BIND|syscall.MS_RDONLY), ""); err != nil {
 			return err
 		}

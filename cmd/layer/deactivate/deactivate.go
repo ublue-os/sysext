@@ -3,6 +3,7 @@ package deactivate
 import (
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,6 +37,8 @@ func deactivateCmd(cmd *cobra.Command, args []string) error {
 	if err := os.Remove(target_layer_path); err != nil {
 		return err
 	}
+
+	slog.Info("Successfully deactivated " + target_layer)
 
 	return nil
 }

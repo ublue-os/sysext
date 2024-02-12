@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 	"slices"
@@ -70,7 +70,7 @@ func addToPathCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if !slices.Contains(valid_stuff, args[0]) {
-		fmt.Fprintf(os.Stderr, "Could not find shell %s, valid shells are: %s", args[0], strings.Join(valid_stuff, ", "))
+		slog.Warn(fmt.Sprintf("Could not find shell %s, valid shells are: %s", args[0], strings.Join(valid_stuff, ", ")))
 		os.Exit(1)
 	}
 
@@ -85,7 +85,7 @@ func addToPathCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Printf("Successfully written snippet to %s\n", rcPath)
+	slog.Info(fmt.Sprintf("Successfully written snippet to %s\n", rcPath))
 
 	return nil
 }

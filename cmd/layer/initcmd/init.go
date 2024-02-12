@@ -3,7 +3,9 @@ package initcmd
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
@@ -42,6 +44,7 @@ var defaultConfiguration = &internal.LayerConfiguration{
 func initCmd(cmd *cobra.Command, args []string) error {
 	var json_config *[]byte = nil
 	if *fTemplate == "" {
+		slog.Debug("Using default template")
 		var err error
 		json_default, err := json.MarshalIndent(defaultConfiguration, "", structures.INDENTATION)
 		if err != nil {
@@ -49,6 +52,7 @@ func initCmd(cmd *cobra.Command, args []string) error {
 		}
 		json_config = &json_default
 	} else {
+		slog.Debug("Using remote template", slog.String("remote_url", *fTemplate))
 		var fetchedConfig = &internal.LayerConfiguration{}
 		json_conf, err := structures.FetchJsonConfig(*fTemplate, fetchedConfig)
 		if err != nil {
@@ -58,13 +62,14 @@ func initCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if fileio.FileExist(*fOutPath) && !*fOverride {
-		fmt.Fprintf(os.Stderr, "Failed writing, file already exists\n")
+		slog.Warn("Failed writing, file already exists")
 		return nil
 	}
 
-	_ = os.Remove(*fOutPath)
+	os.Remove(*fOutPath)
 
 	if *fYaml {
+		slog.Debug("Writing config as YAML", slog.Bool("fYAML value", *fYaml))
 		var configFormat = &internal.LayerConfiguration{}
 		yaml_config, err := structures.JsonToYaml(*json_config, configFormat)
 		if err != nil {
@@ -75,9 +80,11 @@ func initCmd(cmd *cobra.Command, args []string) error {
 
 	bytes_written, err := fileio.FileAppend(*fOutPath, *json_config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed writing configuration file, bytes written: %d\n", bytes_written)
+		slog.Warn(fmt.Sprintf("Failed writing configuration file, bytes written: %d\n", bytes_written))
 		return err
 	}
 
+	slog.Debug("configuration", slog.String("value", string(*json_config)))
+	slog.Info("Successfully written configuration file "+path.Base(*fOutPath), slog.String("out_path", *fOutPath))
 	return nil
 }

@@ -1,7 +1,8 @@
 package activate
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,12 +20,10 @@ var ActivateCmd = &cobra.Command{
 }
 
 var (
-	fQuiet    *bool
 	fFromFile *string
 )
 
 func init() {
-	fQuiet = ActivateCmd.Flags().BoolP("quiet", "q", false, "Do not print anything on success")
 	fFromFile = ActivateCmd.Flags().StringP("file", "f", "", "Activate directly from file instead of cache")
 }
 
@@ -48,9 +47,16 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 			}
 		}
 
+		target_path := path.Join(extensions_dir, target_layer)
+		slog.Debug("acitavate",
+			slog.String("fromfile", *fFromFile),
+			slog.String("layer", target_layer),
+			slog.String("path", target_path),
+		)
 		if err := os.Symlink(target_layer, path.Join(extensions_dir, target_layer)); err != nil {
 			return err
 		}
+		slog.Info(fmt.Sprintf("Successfully activated layer %s\n", path.Base(target_layer)))
 		return nil
 	}
 
@@ -68,12 +74,16 @@ func activateCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := os.Symlink(current_blob_path, path.Join(extensions_dir, path.Base(path.Dir(current_blob_path))+internal.ValidSysextExtension)); err != nil {
+	target_path := path.Join(extensions_dir, path.Base(path.Dir(current_blob_path))+internal.ValidSysextExtension)
+	slog.Debug("acitavate",
+		slog.String("fromfile", *fFromFile),
+		slog.String("layer", target_layer),
+		slog.String("blob", current_blob_path),
+	)
+	if err := os.Symlink(current_blob_path, target_path); err != nil {
 		return err
 	}
 
-	if !*fQuiet {
-		log.Printf("Successfully activated layer %s\n", path.Base(target_layer))
-	}
+	slog.Info(fmt.Sprintf("Successfully activated layer %s\n", path.Base(target_layer)))
 	return nil
 }

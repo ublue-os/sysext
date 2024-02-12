@@ -1,6 +1,7 @@
 package remove
 
 import (
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
 	"github.com/ublue-os/sysext/pkg/fileio"
+	"github.com/ublue-os/sysext/pkg/logging"
 	"github.com/ublue-os/sysext/pkg/percentmanager"
 )
 
@@ -20,16 +22,21 @@ var RemoveCmd = &cobra.Command{
 }
 
 var (
-	fHash *string
+	fHash   *string
+	fDryRun *bool
 )
 
 func init() {
-	fHash = RemoveCmd.Flags().String("hash", "", "Remove specific hash from storage")
+	fHash = RemoveCmd.Flags().StringP("hash", "h", "", "Remove specific hash from storage")
+	fDryRun = RemoveCmd.Flags().Bool("dry-run", false, "Do not remove anything")
 }
 
 func removeCmd(cmd *cobra.Command, args []string) error {
 	pw := percent.NewProgressWriter()
-	go pw.Render()
+	if !*internal.Config.NoProgress {
+		go pw.Render()
+		slog.SetDefault(logging.NewMuteLogger())
+	}
 
 	if len(args) < 1 {
 		return internal.NewPositionalError("TARGET")
@@ -58,9 +65,12 @@ func removeCmd(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		slog.Info("Successfuly deleted " + *fHash)
+		return nil
 	}
 
 	delete_tracker.IncrementSection()
+	slog.Debug("Deleting layer", slog.String("target", target_layer))
 	err = os.RemoveAll(path.Join(cache_dir, target_layer))
 	if err != nil {
 		return err
@@ -73,10 +83,13 @@ func removeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	delete_tracker.IncrementSection()
+	slog.Debug("Deactivating layer", slog.String("target", deactivated_layer))
 	err = os.Remove(deactivated_layer)
 	if err != nil {
 		return err
 	}
+
+	slog.Info("Successfuly deleted "+deactivated_layer, slog.String("target", deactivated_layer))
 
 	delete_tracker.IncrementSection()
 	delete_tracker.Tracker.MarkAsDone()

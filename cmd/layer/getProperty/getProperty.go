@@ -3,42 +3,42 @@ package getProperty
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 	"github.com/ublue-os/sysext/internal"
+	"github.com/ublue-os/sysext/pkg/logging"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"os"
-	"path"
-	"strings"
 )
+
+var validOptions []string = []string{"NAME", "PACKAGES", "ARCH", "OS", "BINARIES", "ISMOUNTED"}
 
 var GetPropertyCmd = &cobra.Command{
 	Use:   "get-property",
 	Short: "Get properties from a selected layer or configuration file",
-	Long: `Get properties from a selected layer or configuration file
+	Long: fmt.Sprintf(`Get properties from a selected layer or configuration file
 
 Supported properties:
-    NAME
-    PACKAGES
-    ARCH
-    OS 
-    BINARIES
-    ISMOUNTED
-`,
-	// not supported yet: UNITS SIGNINGKEY
+    %s 
+`, strings.Join(validOptions, "\n\t")),
 	RunE: getPropertyCmd,
 }
 
 var (
-	fFromFile    *string
-	fSeparator   *string
-	validOptions []string = []string{"NAME", "PACKAGES", "ARCH", "OS", "BINARIES", "ISMOUNTED"}
+	fFromFile  *string
+	fSeparator *string
+	fLogOnly   *bool
 )
 
 func init() {
 	fFromFile = GetPropertyCmd.Flags().StringP("from-file", "f", "", "Read data from a file instead of layer")
+	fLogOnly = GetPropertyCmd.Flags().Bool("log", false, "Do not make a table, just log everything")
 	fSeparator = GetPropertyCmd.Flags().StringP("separator", "s", "\n", "Separator for listing things like arrays")
 }
 
@@ -53,6 +53,10 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 		raw_configuration   []byte
 		unmarshalled_config = &internal.LayerConfiguration{}
 	)
+
+	if !*fLogOnly {
+		slog.SetDefault(logging.NewMuteLogger())
+	}
 
 	if *fFromFile == "" {
 		if len(args) < 1 {
@@ -97,12 +101,15 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 		switch upper_prop_name {
 		case "PACKAGES":
 			{
-				t.AppendRow(table.Row{property_name, strings.Join(unmarshalled_config.Packages, *fSeparator)})
+				packages := strings.Join(unmarshalled_config.Packages, *fSeparator)
+				slog.Info("packages", slog.String("value", packages))
+				t.AppendRow(table.Row{property_name, packages})
 				continue
 			}
 		case "BINARIES":
 			{
 				if !layer_mounted {
+					slog.Info("binaries", slog.String("value", "Layer not mounted"))
 					t.AppendRow(table.Row{"Binaries", "Layer not mounted"})
 					continue
 				}
@@ -115,11 +122,14 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 					dir_contents = append(dir_contents, file.Name())
 				}
 
-				t.AppendRow(table.Row{"Binaries", strings.Join(dir_contents, *fSeparator)})
+				binaries := strings.Join(dir_contents, *fSeparator)
+				slog.Info("binaries", slog.String("value", binaries))
+				t.AppendRow(table.Row{"Binaries", binaries})
 				continue
 			}
 		case "ISMOUNTED":
 			{
+				slog.Info("mounted", slog.Bool("value", layer_mounted))
 				t.AppendRow(table.Row{"IsMounted", layer_mounted})
 				continue
 			}
@@ -129,9 +139,13 @@ func getPropertyCmd(cmd *cobra.Command, args []string) error {
 		if value_get[0] == '<' {
 			return internal.NewInvalidOptionError(property_name)
 		}
+		slog.Info(property_name, slog.String("value", value_get))
 		t.AppendRow(table.Row{property_name, value_get})
 	}
-	fmt.Printf("%s\n", t.Render())
+
+	if !*fLogOnly {
+		fmt.Printf("%s\n", t.Render())
+	}
 
 	return nil
 }

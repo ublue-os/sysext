@@ -36,14 +36,14 @@
         packages = {
           default = self.packages.${system}.bext;
 
-          bext = pkgs.buildGoModule.override {stdenv = pkgs.llvmPackages_14.stdenv;} {
+          bext = pkgs.buildGoModule {
             pname = "sysext";
             name = "bext";
             src = ./.;
             pwd = ./.;
             nativeBuildInputs = bext_deps.build;
             buildInputs = bext_deps.runtime;
-            vendorHash = "sha256-8ecgONmkAfAZ1D0SYLQ3QOmPJbP2Lu3KFcZQ/Shf0tc=";
+            vendorHash = "sha256-Fw0pLaVb/q29zN6nfT60l+tqqQODIsZ4Ar7nZQkT2Pc=";
           };
 
           bextStatic = self.packages.${system}.bext.overrideAttrs (final: oldAttrs: {
@@ -76,7 +76,7 @@
                 paths = all_deps;
               };
 
-              bundle-recipe-derivations = pkgs.stdenv.mkDerivation {
+              bundle-recipe-derivations = pkgs.stdenvNoCC.mkDerivation {
                 name = config.sysext-name + "-store";
                 buildInputs = with pkgs; [perl gnutar];
                 exportReferencesGraph = lib.lists.flatten (builtins.map (x: [("closure-" + baseNameOf x) x]) all_deps);
@@ -88,7 +88,7 @@
                 '';
               };
             in
-              pkgs.stdenv.mkDerivation {
+              pkgs.stdenvNoCC.mkDerivation {
                 name = config.sysext-name + "-baked";
                 buildInputs = with pkgs; [coreutils squashfsTools];
                 buildCommand = ''

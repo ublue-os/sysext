@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,6 +16,7 @@ import (
 	"github.com/ublue-os/sysext/internal"
 	"github.com/ublue-os/sysext/pkg/filecomp"
 	"github.com/ublue-os/sysext/pkg/fileio"
+	"github.com/ublue-os/sysext/pkg/logging"
 	"github.com/ublue-os/sysext/pkg/percentmanager"
 )
 
@@ -53,7 +54,10 @@ func addCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	pw := percent.NewProgressWriter()
-	go pw.Render()
+	if !*internal.Config.NoProgress {
+		go pw.Render()
+		slog.SetDefault(logging.NewMuteLogger())
+	}
 	var expectedSections int = 4
 
 	if !*fNoSymlink {
@@ -80,7 +84,7 @@ func addCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if *fLayerName != "" {
-		fmt.Fprintln(os.Stderr, "Warning: the path inside /usr/lib/sysext/extensions-* must be the same as the layer's name in order for it to function, please check if this is actually the case")
+		slog.Warn("The path inside /usr/lib/sysext/extensions-* must be the same as the layer's name in order for it to function, please check if this is actually the case")
 		target_layer.LayerName = *fLayerName
 	} else {
 		target_layer.LayerName = strings.Split(path.Base(target_layer.Path), ".")[0]
@@ -99,7 +103,7 @@ func addCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if fileio.FileExist(blob_filepath) && !*fOverride {
-		fmt.Fprintln(os.Stderr, "Blob is already in cache")
+		slog.Warn("Blob is already in cache")
 		add_tracker.Tracker.MarkAsErrored()
 		os.Exit(1)
 	}
@@ -131,11 +135,13 @@ func addCmd(cmd *cobra.Command, args []string) error {
 		add_tracker.IncrementSection()
 		_, err = filecomp.CheckFilesAreEqual(md5.New(), tlayer_fileobj, written_file)
 		if err != nil {
+			slog.Warn("Copied blobs did not match")
 			return err
 		}
 	}
 
 	if *fNoSymlink {
+		slog.Info("Successfully added blob to cache", slog.String("blob_path", blob_filepath))
 		add_tracker.Tracker.MarkAsDone()
 		return nil
 	}
@@ -146,6 +152,7 @@ func addCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	add_tracker.Tracker.Message = "Refreshing symlink"
+	slog.Debug("Refreshing symlink", slog.String("path", current_blob_path))
 	add_tracker.IncrementSection()
 	if _, err := os.Lstat(current_blob_path); err == nil {
 		err = os.Remove(current_blob_path)
@@ -167,5 +174,6 @@ func addCmd(cmd *cobra.Command, args []string) error {
 	}
 	add_tracker.Tracker.MarkAsDone()
 
+	slog.Info("Successfully added blob to cache", slog.String("blob_path", blob_filepath))
 	return nil
 }
