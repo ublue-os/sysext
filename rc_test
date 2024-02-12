@@ -1,1 +1,0 @@
-[ -e /tmp/extensions.d/bin ] && PATH="$PATH:/tmp/extensions.d/bin" 
