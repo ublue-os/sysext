@@ -24,14 +24,12 @@ var (
 	fOutPath  *string
 	fTemplate *string
 	fOverride *bool
-	fYaml     *bool
 )
 
 func init() {
 	fOutPath = InitCmd.Flags().StringP("output-path", "o", "config.json", "Output path for new configuration")
 	fTemplate = InitCmd.Flags().StringP("template", "t", "", "URL for template configuration")
 	fOverride = InitCmd.Flags().Bool("override", false, "Override configuration if it already exists in output-path")
-	fYaml = InitCmd.Flags().Bool("yaml", false, "Write configuration as Yaml instead of Json")
 }
 
 var defaultConfiguration = &internal.LayerConfiguration{
@@ -67,16 +65,6 @@ func initCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	os.Remove(*fOutPath)
-
-	if *fYaml {
-		slog.Debug("Writing config as YAML", slog.Bool("fYAML value", *fYaml))
-		var configFormat = &internal.LayerConfiguration{}
-		yaml_config, err := structures.JsonToYaml(*json_config, configFormat)
-		if err != nil {
-			return nil
-		}
-		json_config = &yaml_config
-	}
 
 	bytes_written, err := fileio.FileAppend(*fOutPath, *json_config)
 	if err != nil {
