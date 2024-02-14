@@ -31,7 +31,7 @@
       in {
         formatter = pkgs.alejandra;
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [cobra-cli gopls eclint] ++ bext_deps.build ++ bext_deps.runtime;
+          packages = with pkgs; [cobra-cli gopls eclint apko melange] ++ bext_deps.build ++ bext_deps.runtime;
         };
         packages = {
           default = self.packages.${system}.bext;

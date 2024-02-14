@@ -179,7 +179,7 @@ func buildCmd(cmd *cobra.Command, args []string) error {
 	spec.Env = map[string]string{"BEXT_CONFIG_FILE": "/config.json"}
 	spec.WorkDir = "/out"
 
-	container_command := fmt.Sprintf(`set -eux ; nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result`, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
+	container_command := fmt.Sprintf(`set -eux ; NIXPKGS_ALLOW_UNFREE=1 nix build %s %s#%s -o result && cp -f ./result ./%s && rm ./result`, nix_flags, *fRecipeMakerFlake, *fRecipeMakerAction, path.Base(out_path))
 
 	spec.Command = []string{"/bin/sh", "-c", container_command}
 	createResponse, err := containers.CreateWithSpec(conn, spec, nil)

@@ -1,0 +1,38 @@
+package:
+  name: bext 
+  version: 0.1.0
+  epoch: 0
+  description: "Manager for Systemd system extensions"
+  copyright:
+    - license: Apache-2.0
+      paths: ["*"]
+  dependencies:
+    runtime: 
+    - podman
+  target-architecture:
+    - x86_64
+    - aarch64
+ 
+environment:
+  contents:
+    repositories:
+      - https://dl-cdn.alpinelinux.org/alpine/edge/main
+      - https://dl-cdn.alpinelinux.org/alpine/edge/community
+    packages:
+      - lvm2
+      - lvm2-dev
+      - device-mapper
+      - device-mapper-libs
+      - device-mapper-event-libs
+      - gpgme-dev
+      - btrfs-progs-dev
+      - pkgconf
+      - go 
+      - ca-certificates-bundle
+      - alpine-baselayout-data
+      - libstdc++
+
+pipeline:
+  - name: Build Go application
+    runs: | # CGO_FLAGS required due to upstream issue: https://github.com/mattn/go-sqlite3/issues/1164
+      CGO_CFLAGS='-Doff64_t=__off64_t -D_LARGEFILE64_SOURCE' go build -o "${{targets.destdir}}/usr/bin/bext" . 

@@ -1,0 +1,11 @@
+[Unit]
+Description=Mounting dependencies for bext-managed systemd-sysexts
+ConditionPathExists=!%f
+DefaultDependencies=no
+Requires=systemd-sysext.service
+After=systemd-sysext.service
+[Service]
+Type=oneshot
+ExecStartPre=bext mount extensions --refresh
+ExecStart=bext mount store --refresh
+ExecStopPost=bext mount path
